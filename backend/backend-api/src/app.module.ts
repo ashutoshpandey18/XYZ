@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
+import { StudentModule } from './modules/student/student.module';
 import { PrismaService } from './prisma.service';
 import { AppController } from './app.controller';
 
@@ -11,6 +12,7 @@ import { AppController } from './app.controller';
       envFilePath: '.env',
     }),
     AuthModule,
+    StudentModule,
   ],
   controllers: [AppController],
   providers: [PrismaService],
