@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/LoginPage.tsx";
 import SignupPage from "../pages/SignupPage";
 import DashboardPage from "../pages/DashboardPage";
+import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -20,8 +21,16 @@ export const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole="STUDENT">
         <DashboardPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRole="ADMIN">
+        <AdminDashboard />
       </ProtectedRoute>
     ),
   },

@@ -9,7 +9,12 @@ async function bootstrap() {
   // Security
   app.use(helmet());
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      process.env.CORS_ORIGIN,
+    ].filter(Boolean),
     credentials: true,
   });
 
@@ -21,9 +26,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  // Graceful shutdown
-  app.enableShutdownHooks();
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

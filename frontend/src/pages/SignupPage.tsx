@@ -1,12 +1,13 @@
 import { useForm } from "react-hook-form";
 import { api } from "../lib/api";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Logo from "../components/ui/Logo";
+import { getUserRole } from "../lib/auth";
 
 function SignupPage() {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -23,7 +24,14 @@ function SignupPage() {
       const res = await api.post("/auth/register", data);
       console.log("Registration successful:", res.data);
       localStorage.setItem("accessToken", res.data.accessToken);
-      navigate("/dashboard");
+
+      // Redirect based on role
+      const role = getUserRole();
+      if (role === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       console.error("Registration error:", err);
       console.error("Error response:", err.response);

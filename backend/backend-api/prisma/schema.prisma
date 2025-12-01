@@ -12,11 +12,27 @@ enum UserRole {
   ADMIN
 }
 
+enum EmailRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id            String   @id @default(uuid())
+  id            String          @id @default(uuid())
   name          String
-  email         String   @unique
+  email         String          @unique
   passwordHash  String
-  role          UserRole @default(STUDENT)
-  createdAt     DateTime @default(now())
+  role          UserRole        @default(STUDENT)
+  createdAt     DateTime        @default(now())
+  emailRequests EmailRequest[]
+}
+
+model EmailRequest {
+  id          String              @id @default(uuid())
+  studentId   String
+  student     User                @relation(fields: [studentId], references: [id])
+  documentURL String
+  status      EmailRequestStatus  @default(PENDING)
+  createdAt   DateTime            @default(now())
 }

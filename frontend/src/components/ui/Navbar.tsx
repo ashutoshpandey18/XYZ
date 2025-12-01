@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Button from "./Button";
+import { getUserRole } from "../../lib/auth";
 
 interface NavbarProps {
   userName?: string;
@@ -8,11 +9,14 @@ interface NavbarProps {
 
 const Navbar = ({ userName }: NavbarProps) => {
   const navigate = useNavigate();
+  const userRole = getUserRole();
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     navigate("/login");
   };
+
+  const panelName = userRole === "ADMIN" ? "Admin Panel" : "Student Panel";
 
   return (
     <motion.nav
@@ -23,7 +27,7 @@ const Navbar = ({ userName }: NavbarProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <svg
               className="w-8 h-8 text-blue-600"
               fill="none"
@@ -37,9 +41,14 @@ const Navbar = ({ userName }: NavbarProps) => {
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            <span className="text-lg font-semibold text-gray-900">
-              College Email
-            </span>
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold text-gray-900">
+                College Email
+              </span>
+              <span className="text-xs text-gray-500">
+                {panelName}
+              </span>
+            </div>
           </div>
 
           {/* User Section */}

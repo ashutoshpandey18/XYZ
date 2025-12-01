@@ -7,6 +7,7 @@ import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Logo from "../components/ui/Logo";
+import { getUserRole } from "../lib/auth";
 
 function LoginPage() {
   const { register, handleSubmit } = useForm();
@@ -21,7 +22,14 @@ function LoginPage() {
     try {
       const res = await api.post("/auth/login", data);
       localStorage.setItem("accessToken", res.data.accessToken);
-      navigate("/dashboard");
+
+      // Redirect based on role
+      const role = getUserRole();
+      if (role === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setErrorMessage("Invalid email or password. Please try again.");
     } finally {
