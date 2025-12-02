@@ -7,19 +7,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Navbar from "../components/ui/Navbar";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import StatusBadge from "../components/ui/StatusBadge";
-
-interface EmailRequest {
-  id: string;
-  documentURL: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
-  createdAt: string;
-  student: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+import type { EmailRequest } from "../types";
 
 function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -51,9 +39,22 @@ function AdminDashboard() {
     queryKey: ["admin-requests"],
     queryFn: async () => {
       const res = await api.get("/email-request");
-      return res.data as EmailRequest[];
+      const requests = res.data as EmailRequest[];
+
+      // Trigger OCR extraction for requests without extracted data
+      for (const request of requests) {
+        if (!request.extractedName && !request.extractedRoll && !request.extractedCollegeId) {
+          // Trigger extraction asynchronously (don't wait)
+          api.post(`/email-request/${request.id}/extract`).catch(err => {
+            console.error('OCR extraction failed:', err);
+          });
+        }
+      }
+
+      return requests;
     },
     enabled: !isLoading,
+    refetchInterval: 5000, // Refetch every 5 seconds to get OCR updates
   });
 
   // Approve mutation
@@ -176,13 +177,16 @@ function AdminDashboard() {
                           Email
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Extracted Data
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          AI Recommendation
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Date
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Document
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -190,59 +194,116 @@ function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {requests.map((request) => (
-                        <tr key={request.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-3">
-                                {request.student.name.charAt(0).toUpperCase()}
+                      {requests.map((request) => {
+                        const aiDecision = request.aiDecision?.aiDecision;
+                        const confidenceScore = request.aiDecision?.confidenceScore || 0;
+
+                        return (
+                          <tr key={request.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-3">
+                                  {request.student.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {request.student.name}
+                                </div>
                               </div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {request.student.name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {request.student.email}
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              {request.extractedName || request.extractedRoll || request.extractedCollegeId ? (
+                                <div className="space-y-1 min-w-[200px]">
+                                  {request.extractedName && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-xs text-gray-500 font-medium min-w-[45px]">Name:</span>
+                                      <span className="text-sm text-gray-900">{request.extractedName}</span>
+                                    </div>
+                                  )}
+                                  {request.extractedRoll && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-xs text-gray-500 font-medium min-w-[45px]">Roll:</span>
+                                      <span className="text-sm text-gray-900">{request.extractedRoll}</span>
+                                    </div>
+                                  )}
+                                  {request.extractedCollegeId && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-xs text-gray-500 font-medium min-w-[45px]">ID:</span>
+                                      <span className="text-sm text-gray-900">{request.extractedCollegeId}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400 italic flex items-center gap-1">
+                                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                  </svg>
+                                  Processing...
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {aiDecision ? (
+                                <div className="space-y-1">
+                                  <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                    aiDecision === 'LIKELY_APPROVE'
+                                      ? 'bg-green-100 text-green-800'
+                                      : aiDecision === 'REVIEW_MANUALLY'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {aiDecision === 'LIKELY_APPROVE' && '✓ '}
+                                    {aiDecision === 'REVIEW_MANUALLY' && '⚠ '}
+                                    {aiDecision === 'FLAG_SUSPICIOUS' && '⚡ '}
+                                    {aiDecision === 'LIKELY_APPROVE' ? 'Likely Valid' : aiDecision === 'REVIEW_MANUALLY' ? 'Review' : 'Suspicious'}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {(confidenceScore * 100).toFixed(0)}% match
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400 italic">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(request.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <a
+                                href={request.documentURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                View →
+                              </a>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  onClick={() => approveMutation.mutate(request.id)}
+                                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                                  variant="primary"
+                                  className="!w-auto px-3 py-1.5 text-xs"
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  onClick={() => rejectMutation.mutate(request.id)}
+                                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                                  variant="danger"
+                                  className="!w-auto px-3 py-1.5 text-xs"
+                                >
+                                  Reject
+                                </Button>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {request.student.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <a
-                              href={request.documentURL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              View →
-                            </a>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={request.status} />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                onClick={() => approveMutation.mutate(request.id)}
-                                disabled={approveMutation.isPending || rejectMutation.isPending}
-                                variant="primary"
-                                className="!w-auto px-3 py-1.5 text-xs"
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                onClick={() => rejectMutation.mutate(request.id)}
-                                disabled={approveMutation.isPending || rejectMutation.isPending}
-                                variant="danger"
-                                className="!w-auto px-3 py-1.5 text-xs"
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

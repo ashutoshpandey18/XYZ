@@ -29,10 +29,15 @@ model User {
 }
 
 model EmailRequest {
-  id          String              @id @default(uuid())
-  studentId   String
-  student     User                @relation(fields: [studentId], references: [id])
-  documentURL String
-  status      EmailRequestStatus  @default(PENDING)
-  createdAt   DateTime            @default(now())
+  id                  String              @id @default(uuid())
+  studentId           String
+  student             User                @relation(fields: [studentId], references: [id])
+  documentURL         String
+  status              EmailRequestStatus  @default(PENDING)
+  extractedName       String?
+  extractedRoll       String?
+  extractedCollegeId  String?
+  aiDecision          String?
+  confidenceScore     Float?
+  createdAt           DateTime            @default(now())
 }

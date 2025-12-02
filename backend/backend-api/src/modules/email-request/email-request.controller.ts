@@ -99,4 +99,10 @@ export class EmailRequestController {
   async rejectRequest(@Param('id') id: string) {
     return this.emailRequestService.rejectRequest(id);
   }
+
+  // Trigger OCR extraction for a request
+  @Post(':id/extract')
+  async extractOcrData(@Param('id') id: string) {
+    return this.emailRequestService.extractOcrData(id);
+  }
 }
