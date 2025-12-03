@@ -3,6 +3,9 @@ export interface User {
   name: string;
   email: string;
   role: 'STUDENT' | 'ADMIN';
+  collegeEmail?: string;
+  emailIssued?: boolean;
+  emailIssuedAt?: string;
 }
 
 export type EmailRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -25,4 +28,12 @@ export interface EmailRequest {
     nameMatch: number;
     rollMatch: number;
   };
+}
+
+export interface IssuedEmailHistory {
+  id: string;
+  studentId: string;
+  student: User;
+  issuedEmail: string;
+  issuedAt: string;
 }

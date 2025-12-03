@@ -5,6 +5,7 @@ import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { StudentModule } from './modules/student/student.module';
 import { EmailRequestModule } from './modules/email-request/email-request.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { PrismaService } from './prisma.service';
 import { AppController } from './app.controller';
 
@@ -21,6 +22,7 @@ import { AppController } from './app.controller';
     AuthModule,
     StudentModule,
     EmailRequestModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [PrismaService],

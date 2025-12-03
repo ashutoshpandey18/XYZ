@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api, adminApi } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +7,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Navbar from "../components/ui/Navbar";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import type { EmailRequest } from "../types";
+import type { EmailRequest, IssuedEmailHistory } from "../types";
 
 function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -85,6 +85,34 @@ function AdminDashboard() {
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || "Rejection failed";
+      toast.error(Array.isArray(message) ? message[0] : message);
+    },
+  });
+
+  // Fetch pending email issuances (approved but not issued)
+  const { data: pendingIssuances, isLoading: pendingIssuancesLoading } = useQuery({
+    queryKey: ["pending-issuances"],
+    queryFn: adminApi.getPendingIssuances,
+    enabled: !isLoading,
+  });
+
+  // Fetch issued emails history
+  const { data: issuedHistory, isLoading: issuedHistoryLoading } = useQuery({
+    queryKey: ["issued-emails"],
+    queryFn: adminApi.getIssuedEmails,
+    enabled: !isLoading,
+  });
+
+  // Issue college email mutation
+  const issueEmailMutation = useMutation({
+    mutationFn: adminApi.issueCollegeEmail,
+    onSuccess: (data) => {
+      toast.success(`College email issued: ${data.collegeEmail}`);
+      queryClient.invalidateQueries({ queryKey: ["pending-issuances"] });
+      queryClient.invalidateQueries({ queryKey: ["issued-emails"] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Email issuance failed";
       toast.error(Array.isArray(message) ? message[0] : message);
     },
   });
@@ -304,6 +332,183 @@ function AdminDashboard() {
                           </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+
+            {/* Email Issuance Panel */}
+            <Card className="p-8 bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">
+                    📧 College Email Issuance
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Create and send college email accounts for approved students
+                  </p>
+                </div>
+                <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {pendingIssuances?.length || 0} ready to issue
+                </span>
+              </div>
+
+              {pendingIssuancesLoading ? (
+                <div className="text-center py-8 text-gray-500">
+                  Loading pending issuances...
+                </div>
+              ) : !pendingIssuances || pendingIssuances.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                  <svg
+                    className="w-16 h-16 text-gray-300 mx-auto mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <p className="text-gray-500 font-medium">No approved requests pending issuance</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Approve requests first to issue college emails
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Roll Number
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Personal Email
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {pendingIssuances.map((request) => (
+                        <tr key={request.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold mr-3">
+                                {request.student.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {request.student.name}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                            {request.extractedRoll || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {request.student.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <Button
+                              onClick={() => issueEmailMutation.mutate(request.id)}
+                              disabled={issueEmailMutation.isPending}
+                              variant="primary"
+                              className="!w-auto px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700"
+                            >
+                              {issueEmailMutation.isPending ? "Issuing..." : "Issue College Email 📧"}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+
+            {/* Issued Emails History */}
+            <Card className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  📋 Issued Emails History
+                </h2>
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {issuedHistory?.length || 0} total issued
+                </span>
+              </div>
+
+              {issuedHistoryLoading ? (
+                <div className="text-center py-8 text-gray-500">
+                  Loading history...
+                </div>
+              ) : !issuedHistory || issuedHistory.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg
+                    className="w-16 h-16 text-gray-300 mx-auto mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <p className="text-gray-500">No emails issued yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          College Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Personal Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Issued Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {issuedHistory.map((record) => (
+                        <tr key={record.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold mr-3">
+                                ✓
+                              </div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {record.student.name}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                            {record.student.collegeEmail || record.issuedEmail}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {record.student.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(record.issuedAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

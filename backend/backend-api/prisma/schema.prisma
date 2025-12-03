@@ -19,13 +19,18 @@ enum EmailRequestStatus {
 }
 
 model User {
-  id            String          @id @default(uuid())
-  name          String
-  email         String          @unique
-  passwordHash  String
-  role          UserRole        @default(STUDENT)
-  createdAt     DateTime        @default(now())
-  emailRequests EmailRequest[]
+  id                  String                 @id @default(uuid())
+  name                String
+  email               String                 @unique
+  passwordHash        String
+  role                UserRole               @default(STUDENT)
+  collegeEmail        String?                @unique
+  emailIssued         Boolean                @default(false)
+  emailIssuedAt       DateTime?
+  emailPassword       String?
+  createdAt           DateTime               @default(now())
+  emailRequests       EmailRequest[]
+  issuedEmailHistory  IssuedEmailHistory[]
 }
 
 model EmailRequest {
@@ -40,4 +45,12 @@ model EmailRequest {
   aiDecision          String?
   confidenceScore     Float?
   createdAt           DateTime            @default(now())
+}
+
+model IssuedEmailHistory {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id])
+  issuedEmail String
+  issuedAt    DateTime @default(now())
 }

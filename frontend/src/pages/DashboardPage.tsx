@@ -108,6 +108,50 @@ function DashboardPage() {
             transition={{ duration: 0.4 }}
             className="space-y-6"
           >
+            {/* College Email Success Card */}
+            {user?.emailIssued && user?.collegeEmail && (
+              <Card className="p-8 bg-gradient-to-r from-green-500 to-emerald-600 text-white" hoverable>
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full">
+                        ✅ EMAIL ISSUED
+                      </span>
+                    </div>
+                    <h2 className="text-3xl font-bold mb-2">
+                      Your Official College Email is Ready! 🎉
+                    </h2>
+                    <div className="mt-4 bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
+                      <p className="text-sm text-green-100 mb-2">College Email Address:</p>
+                      <p className="text-2xl font-bold mb-3">{user.collegeEmail}</p>
+                      <p className="text-sm text-green-100">
+                        📧 Login credentials have been sent to your personal email ({user.email})
+                      </p>
+                      {user.emailIssuedAt && (
+                        <p className="text-xs text-green-100 mt-2">
+                          Issued on: {new Date(user.emailIssuedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4 text-sm text-green-100">
+                      <p className="mb-1">📝 <strong>Next Steps:</strong></p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Check your personal email inbox for login credentials</li>
+                        <li>Login to the college email portal</li>
+                        <li>Change your temporary password immediately</li>
+                        <li>Set up profile and recovery options</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Welcome Card */}
             <Card className="p-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white" hoverable>
               <div className="flex items-start space-x-4">
