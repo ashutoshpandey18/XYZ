@@ -1,78 +1,327 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { EmailGenerationService } from './email-generation.service';
-import { EmailSenderService } from './email-sender.service';
+import { AuditLogService } from './audit-log.service';
+import { EmailRequestStatus, Prisma, AuditAction } from '@prisma/client';
+import { GetRequestsQueryDto } from './dto/admin-requests.dto';
 
 @Injectable()
 export class AdminService {
   constructor(
     private prisma: PrismaService,
     private emailGenerator: EmailGenerationService,
-    private emailSender: EmailSenderService,
+    private auditLogService: AuditLogService,
   ) {}
 
   /**
-   * Issue college email for approved request
+   * DAY-7: Get all email requests with filtering, searching, sorting
    */
-  async issueCollegeEmail(requestId: string) {
-    // Load the email request with student data
-    const emailRequest = await this.prisma.emailRequest.findUnique({
+  async getAllRequests(query: GetRequestsQueryDto, adminId: string) {
+    const {
+      status,
+      search,
+      sortBy = 'createdAt',
+      order = 'desc',
+      page = 1,
+      limit = 20,
+    } = query;
+
+    // Build where clause
+    const where: Prisma.EmailRequestWhereInput = {};
+
+    if (status) {
+      where.status = status as EmailRequestStatus;
+    }
+
+    if (search) {
+      where.OR = [
+        { extractedName: { contains: search, mode: 'insensitive' } },
+        { extractedRoll: { contains: search, mode: 'insensitive' } },
+        { student: { name: { contains: search, mode: 'insensitive' } } },
+        { student: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    // Build orderBy
+    const orderBy: Prisma.EmailRequestOrderByWithRelationInput = {};
+    if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
+      orderBy[sortBy] = order;
+    } else if (sortBy === 'confidenceScore') {
+      orderBy.confidenceScore = order;
+    } else if (sortBy === 'status') {
+      orderBy.status = order;
+    }
+
+    // Pagination
+    const skip = (page - 1) * limit;
+
+    // Execute queries
+    const [requests, total] = await Promise.all([
+      this.prisma.emailRequest.findMany({
+        where,
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              collegeEmail: true,
+              emailIssued: true,
+            },
+          },
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      this.prisma.emailRequest.count({ where }),
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * DAY-7: Get single request details with audit logs
+   */
+  async getRequestDetails(requestId: string) {
+    const request = await this.prisma.emailRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            collegeEmail: true,
+            emailIssued: true,
+            emailIssuedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Request ${requestId} not found`);
+    }
+
+    // Get audit logs
+    const auditLogs = await this.auditLogService.getRequestAuditLogs(requestId);
+
+    return {
+      ...request,
+      auditLogs,
+    };
+  }
+
+  /**
+   * DAY-7: Approve request with admin notes
+   */
+  async approveRequest(
+    requestId: string,
+    adminId: string,
+    adminNotes?: string,
+  ) {
+    const request = await this.prisma.emailRequest.findUnique({
       where: { id: requestId },
       include: { student: true },
     });
 
-    if (!emailRequest) {
-      throw new NotFoundException(`Email request with ID ${requestId} not found`);
+    if (!request) {
+      throw new NotFoundException(`Request ${requestId} not found`);
     }
 
-    if (!emailRequest.student) {
-      throw new NotFoundException('Student not found for this request');
-    }
-
-    // Validate request is approved
-    if (emailRequest.status !== 'APPROVED') {
-      throw new Error(
-        `Cannot issue email for request with status: ${emailRequest.status}. Request must be APPROVED first.`
+    if (request.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Cannot approve request with status: ${request.status}`,
       );
     }
 
-    // Check if email already issued
-    if (emailRequest.student.emailIssued) {
-      throw new Error(
-        `College email already issued for student ${emailRequest.student.name} (${emailRequest.student.collegeEmail})`
+    // Update request
+    const updated = await this.prisma.emailRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'APPROVED',
+        adminNotes,
+        processedAt: new Date(),
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // Log action
+    await this.auditLogService.logAction(
+      adminId,
+      requestId,
+      AuditAction.APPROVE_REQUEST,
+      adminNotes || 'Request approved',
+    );
+
+    console.log(
+      `✅ Request ${requestId} approved by admin ${adminId} for student ${request.student.name}`,
+    );
+
+    return updated;
+  }
+
+  /**
+   * DAY-7: Reject request with admin notes
+   */
+  async rejectRequest(
+    requestId: string,
+    adminId: string,
+    adminNotes?: string,
+  ) {
+    const request = await this.prisma.emailRequest.findUnique({
+      where: { id: requestId },
+      include: { student: true },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Request ${requestId} not found`);
+    }
+
+    if (request.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Cannot reject request with status: ${request.status}`,
       );
     }
 
-    const student = emailRequest.student;
+    // Update request
+    const updated = await this.prisma.emailRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'REJECTED',
+        adminNotes,
+        processedAt: new Date(),
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
 
-    // Validate extracted roll number exists
-    if (!emailRequest.extractedRoll) {
-      throw new Error(
-        'Cannot issue email: Roll number not extracted from ID card. Please verify OCR processing completed.'
+    // Log action
+    await this.auditLogService.logAction(
+      adminId,
+      requestId,
+      AuditAction.REJECT_REQUEST,
+      adminNotes || 'Request rejected',
+    );
+
+    console.log(
+      `❌ Request ${requestId} rejected by admin ${adminId} for student ${request.student.name}`,
+    );
+
+    return updated;
+  }
+
+  /**
+   * DAY-7: Issue college email (DB ONLY - NO EMAIL SENDING)
+   * This creates the college email and stores credentials in database
+   * Email delivery will be handled separately in Day-8
+   */
+  async issueCollegeEmailDbOnly(
+    requestId: string,
+    adminId: string,
+    adminNotes?: string,
+  ) {
+    const request = await this.prisma.emailRequest.findUnique({
+      where: { id: requestId },
+      include: { student: true },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Request ${requestId} not found`);
+    }
+
+    if (request.status !== 'APPROVED') {
+      throw new BadRequestException(
+        `Cannot issue email for request with status: ${request.status}. Must be APPROVED first.`,
       );
     }
+
+    if (request.student.emailIssued) {
+      throw new BadRequestException(
+        `College email already issued for ${request.student.name}`,
+      );
+    }
+
+    if (!request.extractedRoll) {
+      throw new BadRequestException(
+        'Cannot issue email: Roll number not extracted',
+      );
+    }
+
+    const student = request.student;
 
     // Generate college email
     const collegeEmail = await this.emailGenerator.generateCollegeEmail(
       student.name,
-      emailRequest.extractedRoll,
+      request.extractedRoll,
     );
 
-    // Generate secure password
+    // Generate and hash password
     const tempPassword = this.emailGenerator.generateSecurePassword();
     const hashedPassword = await this.emailGenerator.hashPassword(tempPassword);
 
-    // IMPORTANT: Log password server-side only (admin can check logs if needed)
+    // Log password server-side for admin reference
     console.log(`🔐 TEMP PASSWORD for ${student.email}: ${tempPassword}`);
+    console.log(`📧 College email generated: ${collegeEmail}`);
 
     // Update student record
-    const updatedStudent = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id: student.id },
       data: {
         collegeEmail,
         emailIssued: true,
         emailIssuedAt: new Date(),
         emailPassword: hashedPassword,
+      },
+    });
+
+    // Update request status to ISSUED
+    const updated = await this.prisma.emailRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'ISSUED',
+        adminNotes,
+        processedAt: new Date(),
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            collegeEmail: true,
+            emailIssued: true,
+            emailIssuedAt: true,
+          },
+        },
       },
     });
 
@@ -84,42 +333,31 @@ export class AdminService {
       },
     });
 
-    // Send credentials email to student
-    let emailSent = false;
-    try {
-      await this.emailSender.sendCollegeEmailCredentials(
-        student.email,
-        student.name,
-        collegeEmail,
-        tempPassword,
-      );
-      emailSent = true;
-    } catch (error) {
-      console.error(`❌ Failed to send email to ${student.email}:`, error.message);
-      // Don't throw - issuance is saved, admin can manually send credentials
-    }
+    // Log action
+    await this.auditLogService.logAction(
+      adminId,
+      requestId,
+      AuditAction.ISSUE_EMAIL,
+      `College email ${collegeEmail} issued. ${adminNotes || ''}`,
+    );
 
-    console.log(`✅ College email issued: ${collegeEmail} for ${student.name}`);
+    console.log(
+      `✅ College email ${collegeEmail} issued for ${student.name} (DB saved, no email sent)`,
+    );
 
-    // SECURITY: Never return plain password in API response
     return {
       success: true,
+      request: updated,
       collegeEmail,
-      studentName: student.name,
-      studentEmail: student.email,
-      emailSent,
-      issuedAt: updatedStudent.emailIssuedAt,
-      message: emailSent
-        ? 'College email created and credentials sent to student'
-        : 'College email created but failed to send credentials. Check server logs for password.',
+      message: 'College email created in database. Email delivery pending.',
     };
   }
 
   /**
-   * Get all issued emails history (admin only)
+   * Get issued emails history
    */
   async getIssuedEmailsHistory() {
-    const history = await this.prisma.issuedEmailHistory.findMany({
+    return this.prisma.issuedEmailHistory.findMany({
       include: {
         student: {
           select: {
@@ -132,35 +370,35 @@ export class AdminService {
       },
       orderBy: { issuedAt: 'desc' },
     });
-
-    return history;
   }
 
   /**
-   * Get all pending email requests (approved but not issued)
+   * Get dashboard statistics
    */
-  async getPendingIssuances() {
-    const pendingRequests = await this.prisma.emailRequest.findMany({
-      where: {
-        status: 'APPROVED',
-        student: {
-          emailIssued: false,
-        },
-      },
-      include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            emailIssued: true,
-          },
-        },
-        // Include extractedRoll for email generation
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getDashboardStats() {
+    const [
+      totalRequests,
+      pendingRequests,
+      approvedRequests,
+      rejectedRequests,
+      issuedRequests,
+      totalIssuedEmails,
+    ] = await Promise.all([
+      this.prisma.emailRequest.count(),
+      this.prisma.emailRequest.count({ where: { status: 'PENDING' } }),
+      this.prisma.emailRequest.count({ where: { status: 'APPROVED' } }),
+      this.prisma.emailRequest.count({ where: { status: 'REJECTED' } }),
+      this.prisma.emailRequest.count({ where: { status: 'ISSUED' } }),
+      this.prisma.user.count({ where: { emailIssued: true } }),
+    ]);
 
-    return pendingRequests;
+    return {
+      totalRequests,
+      pending: pendingRequests,
+      approved: approvedRequests,
+      rejected: rejectedRequests,
+      issued: issuedRequests,
+      totalIssuedEmails,
+    };
   }
 }

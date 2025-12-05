@@ -8,9 +8,25 @@ export interface User {
   emailIssuedAt?: string;
 }
 
-export type EmailRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type EmailRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ISSUED';
+
+export type AuditAction = 'APPROVE_REQUEST' | 'REJECT_REQUEST' | 'ISSUE_EMAIL' | 'ADD_NOTES';
 
 export type AiDecision = 'LIKELY_APPROVE' | 'REVIEW_MANUALLY' | 'FLAG_SUSPICIOUS';
+
+export interface AuditLog {
+  id: string;
+  adminId: string;
+  admin: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  requestId: string;
+  action: AuditAction;
+  details?: string;
+  createdAt: string;
+}
 
 export interface EmailRequest {
   id: string;
@@ -21,13 +37,13 @@ export interface EmailRequest {
   extractedName?: string;
   extractedRoll?: string;
   extractedCollegeId?: string;
+  aiDecision?: string;
+  confidenceScore?: number;
+  adminNotes?: string;
+  processedAt?: string;
   createdAt: string;
-  aiDecision?: {
-    aiDecision: AiDecision;
-    confidenceScore: number;
-    nameMatch: number;
-    rollMatch: number;
-  };
+  updatedAt: string;
+  auditLogs?: AuditLog[];
 }
 
 export interface IssuedEmailHistory {
@@ -36,4 +52,23 @@ export interface IssuedEmailHistory {
   student: User;
   issuedEmail: string;
   issuedAt: string;
+}
+
+export interface DashboardStats {
+  totalRequests: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  issued: number;
+  totalIssuedEmails: number;
+}
+
+export interface PaginatedResponse<T> {
+  requests: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }

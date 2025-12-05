@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { EmailGenerationService } from './email-generation.service';
-import { EmailSenderService } from './email-sender.service';
+import { AuditLogService } from './audit-log.service';
 import { PrismaService } from '../../prisma.service';
 
 @Module({
@@ -10,9 +10,9 @@ import { PrismaService } from '../../prisma.service';
   providers: [
     AdminService,
     EmailGenerationService,
-    EmailSenderService,
+    AuditLogService,
     PrismaService,
   ],
-  exports: [AdminService],
+  exports: [AdminService, AuditLogService],
 })
 export class AdminModule {}

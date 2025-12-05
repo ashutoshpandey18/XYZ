@@ -16,6 +16,14 @@ enum EmailRequestStatus {
   PENDING
   APPROVED
   REJECTED
+  ISSUED
+}
+
+enum AuditAction {
+  APPROVE_REQUEST
+  REJECT_REQUEST
+  ISSUE_EMAIL
+  ADD_NOTES
 }
 
 model User {
@@ -31,6 +39,7 @@ model User {
   createdAt           DateTime               @default(now())
   emailRequests       EmailRequest[]
   issuedEmailHistory  IssuedEmailHistory[]
+  auditLogs           AuditLog[]
 }
 
 model EmailRequest {
@@ -44,7 +53,11 @@ model EmailRequest {
   extractedCollegeId  String?
   aiDecision          String?
   confidenceScore     Float?
+  adminNotes          String?
+  processedAt         DateTime?
   createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @default(now()) @updatedAt
+  auditLogs           AuditLog[]
 }
 
 model IssuedEmailHistory {
@@ -53,4 +66,19 @@ model IssuedEmailHistory {
   student     User     @relation(fields: [studentId], references: [id])
   issuedEmail String
   issuedAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  adminId     String
+  admin       User        @relation(fields: [adminId], references: [id])
+  requestId   String
+  request     EmailRequest @relation(fields: [requestId], references: [id])
+  action      AuditAction
+  details     String?
+  createdAt   DateTime    @default(now())
+
+  @@index([requestId])
+  @@index([adminId])
+  @@index([createdAt])
 }

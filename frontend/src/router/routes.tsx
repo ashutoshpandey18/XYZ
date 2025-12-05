@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/LoginPage.tsx";
 import SignupPage from "../pages/SignupPage";
 import DashboardPage from "../pages/DashboardPage";
-import AdminDashboard from "../pages/AdminDashboard";
+import NewAdminDashboard from "../pages/NewAdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedRoute requiredRole="ADMIN">
-        <AdminDashboard />
+        <NewAdminDashboard />
       </ProtectedRoute>
     ),
   },
