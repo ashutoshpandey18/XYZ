@@ -2,7 +2,11 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "../pages/LoginPage.tsx";
 import SignupPage from "../pages/SignupPage";
 import DashboardPage from "../pages/DashboardPage";
+import EnhancedStudentDashboard from "../pages/EnhancedStudentDashboard";
 import NewAdminDashboard from "../pages/NewAdminDashboard";
+import EnhancedAdminDashboard from "../pages/EnhancedAdminDashboard";
+import AuditLogsPage from "../pages/AuditLogsPage";
+import EmailSettingsPage from "../pages/EmailSettingsPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -22,7 +26,7 @@ export const router = createBrowserRouter([
     path: "/dashboard",
     element: (
       <ProtectedRoute requiredRole="STUDENT">
-        <DashboardPage />
+        <EnhancedStudentDashboard />
       </ProtectedRoute>
     ),
   },
@@ -30,7 +34,23 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedRoute requiredRole="ADMIN">
-        <NewAdminDashboard />
+        <EnhancedAdminDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/audit-logs",
+    element: (
+      <ProtectedRoute requiredRole="ADMIN">
+        <AuditLogsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/settings",
+    element: (
+      <ProtectedRoute requiredRole="ADMIN">
+        <EmailSettingsPage />
       </ProtectedRoute>
     ),
   },
