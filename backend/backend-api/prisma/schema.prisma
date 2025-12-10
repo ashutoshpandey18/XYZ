@@ -26,20 +26,32 @@ enum AuditAction {
   ADD_NOTES
 }
 
+enum EmailDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
 model User {
-  id                  String                 @id @default(uuid())
-  name                String
-  email               String                 @unique
-  passwordHash        String
-  role                UserRole               @default(STUDENT)
-  collegeEmail        String?                @unique
-  emailIssued         Boolean                @default(false)
-  emailIssuedAt       DateTime?
-  emailPassword       String?
-  createdAt           DateTime               @default(now())
-  emailRequests       EmailRequest[]
-  issuedEmailHistory  IssuedEmailHistory[]
-  auditLogs           AuditLog[]
+  id                      String                      @id @default(uuid())
+  name                    String
+  email                   String                      @unique
+  passwordHash            String
+  role                    UserRole                    @default(STUDENT)
+  collegeEmail            String?                     @unique
+  emailIssued             Boolean                     @default(false)
+  emailIssuedAt           DateTime?
+  emailPassword           String?
+  profilePhotoUrl         String?
+  isEmailVerified         Boolean                     @default(false)
+  emailVerifiedAt         DateTime?
+  createdAt               DateTime                    @default(now())
+  emailRequests           EmailRequest[]
+  issuedEmailHistory      IssuedEmailHistory[]
+  auditLogs               AuditLog[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
 }
 
 model EmailRequest {
@@ -53,11 +65,18 @@ model EmailRequest {
   extractedCollegeId  String?
   aiDecision          String?
   confidenceScore     Float?
+  ocrCompletedAt      DateTime?
   adminNotes          String?
   processedAt         DateTime?
+  emailSentAt         DateTime?
+  emailDeliveryStatus EmailDeliveryStatus @default(PENDING)
+  emailRetryCount     Int                 @default(0)
+  emailError          String?
+  lastEmailAttemptAt  DateTime?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @default(now()) @updatedAt
   auditLogs           AuditLog[]
+  emailRetryLogs      EmailRetryLog[]
 }
 
 model IssuedEmailHistory {
@@ -69,16 +88,68 @@ model IssuedEmailHistory {
 }
 
 model AuditLog {
-  id          String      @id @default(uuid())
+  id          String       @id @default(uuid())
   adminId     String
-  admin       User        @relation(fields: [adminId], references: [id])
+  admin       User         @relation(fields: [adminId], references: [id])
   requestId   String
   request     EmailRequest @relation(fields: [requestId], references: [id])
   action      AuditAction
   details     String?
-  createdAt   DateTime    @default(now())
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime     @default(now())
 
   @@index([requestId])
   @@index([adminId])
   @@index([createdAt])
+}
+
+model EmailSettings {
+  id         String   @id @default(uuid())
+  smtpHost   String
+  smtpPort   Int
+  smtpUser   String
+  smtpPass   String   // Encrypted with AES-256
+  fromEmail  String
+  fromName   String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model EmailRetryLog {
+  id              String              @id @default(uuid())
+  requestId       String
+  request         EmailRequest        @relation(fields: [requestId], references: [id])
+  attemptNumber   Int
+  status          EmailDeliveryStatus
+  errorMessage    String?
+  attemptedAt     DateTime            @default(now())
+
+  @@index([requestId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }

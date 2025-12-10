@@ -1,264 +1,282 @@
-import { useEffect, useState, useRef } from "react";
-import { api } from "../lib/api";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import toast, { Toaster } from "react-hot-toast";
-import Navbar from "../components/ui/Navbar";
-import Card from "../components/ui/Card";
-import Button from "../components/ui/Button";
-import StatusBadge from "../components/ui/StatusBadge";
-import SkeletonCard from "../components/ui/SkeletonCard";
-import type { EmailRequest } from "../types";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMe, getStudentRequests, uploadIdCard } from '../lib/api';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import Navbar from '../components/Navbar';
+import ProfilePhotoUploader from '../components/ProfilePhotoUploader';
+import UploadCard from '../components/UploadCard';
+import Card from '../components/ui/Card';
+import StatusBadge from '../components/ui/StatusBadge';
+import ConfidenceBadge from '../components/ui/ConfidenceBadge';
 
 function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setIsLoading(true);
-    api
-      .get("/student/me")
-      .then((res) => {
-        setUser(res.data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        navigate("/login");
-      });
-  }, [navigate]);
-
-  // Fetch email requests
-  const { data: requests, isLoading: requestsLoading } = useQuery({
-    queryKey: ["email-requests"],
-    queryFn: async () => {
-      const res = await api.get("/email-request/me");
-      return res.data as EmailRequest[];
-    },
-    enabled: !isLoading,
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['me'],
+    queryFn: getMe,
+    refetchInterval: 3000, // Auto-refresh every 3 seconds
   });
 
-  // Upload mutation
+  const { data: requests = [], isLoading: requestsLoading } = useQuery({
+    queryKey: ['student-requests'],
+    queryFn: getStudentRequests,
+    refetchInterval: 2000, // Auto-refresh every 2 seconds for OCR/AI updates
+  });
+
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("document", file);
-      const res = await api.post("/email-request", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return res.data;
-    },
+    mutationFn: uploadIdCard,
     onSuccess: () => {
-      toast.success("Document uploaded successfully!");
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      queryClient.invalidateQueries({ queryKey: ["email-requests"] });
+      queryClient.invalidateQueries({ queryKey: ['student-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success('ID card uploaded successfully! Processing...');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || "Upload failed";
-      toast.error(Array.isArray(message) ? message[0] : message);
+      toast.error(error.response?.data?.message || 'Failed to upload ID card');
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Only PDF, PNG, and JPG files are allowed");
-        return;
-      }
-      // Validate file size (2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("File size must be less than 2MB");
-        return;
-      }
-      setSelectedFile(file);
-    }
+  const latestRequest = requests[0];
+
+  const getTimelineEvents = () => {
+    if (!latestRequest) return [];
+
+    const events = [
+      {
+        title: 'Request Created',
+        timestamp: latestRequest.createdAt,
+        completed: true,
+      },
+      {
+        title: 'OCR Processing',
+        timestamp: latestRequest.extractedName ? latestRequest.updatedAt : undefined,
+        completed: !!latestRequest.extractedName,
+      },
+      {
+        title: 'AI Evaluation',
+        timestamp: latestRequest.aiDecision ? latestRequest.updatedAt : undefined,
+        completed: !!latestRequest.aiDecision,
+      },
+      {
+        title: 'Admin Review',
+        timestamp: latestRequest.processedAt,
+        completed: latestRequest.status !== 'PENDING',
+      },
+      {
+        title: 'Email Issued',
+        timestamp: latestRequest.emailSentAt,
+        completed: latestRequest.status === 'ISSUED',
+      },
+    ];
+
+    return events;
   };
 
-  const handleUpload = () => {
-    if (selectedFile) {
-      uploadMutation.mutate(selectedFile);
-    }
-  };
+  if (userLoading || requestsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 h-64 bg-gray-200 rounded"></div>
+              <div className="lg:col-span-2 h-96 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const hasPendingRequest = requests?.some((req) => req.status === "PENDING");
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-gray-50">
-      <Toaster position="top-right" />
-      <Navbar userName={user?.name} />
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {isLoading ? (
-          <div className="space-y-6">
-            <SkeletonCard />
-            <SkeletonCard />
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
+            <p className="text-gray-600 mt-1">Manage your college email request</p>
           </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6"
-          >
-            {/* College Email Success Card */}
-            {user?.emailIssued && user?.collegeEmail && (
-              <Card className="p-8 bg-gradient-to-r from-green-500 to-emerald-600 text-white" hoverable>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Profile & Upload */}
+            <div className="space-y-6">
+              {/* Profile Card */}
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
+                <ProfilePhotoUploader
+                  profilePhotoUrl={user.profilePhotoUrl}
+                  userName={user.name}
+                />
+                <div className="mt-6 space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Name</p>
+                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full">
-                        ✅ EMAIL ISSUED
-                      </span>
-                    </div>
-                    <h2 className="text-3xl font-bold mb-2">
-                      Your Official College Email is Ready! 🎉
-                    </h2>
-                    <div className="mt-4 bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
-                      <p className="text-sm text-green-100 mb-2">College Email Address:</p>
-                      <p className="text-2xl font-bold mb-3">{user.collegeEmail}</p>
-                      <p className="text-sm text-green-100">
-                        📧 Login credentials have been sent to your personal email ({user.email})
-                      </p>
-                      {user.emailIssuedAt && (
-                        <p className="text-xs text-green-100 mt-2">
-                          Issued on: {new Date(user.emailIssuedAt).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-4 text-sm text-green-100">
-                      <p className="mb-1">📝 <strong>Next Steps:</strong></p>
-                      <ul className="list-disc list-inside space-y-1 ml-2">
-                        <li>Check your personal email inbox for login credentials</li>
-                        <li>Login to the college email portal</li>
-                        <li>Change your temporary password immediately</li>
-                        <li>Set up profile and recovery options</li>
-                      </ul>
-                    </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="text-sm font-medium text-gray-900">{user.email}</p>
                   </div>
+                  {user.collegeEmail && (
+                    <div>
+                      <p className="text-xs text-gray-500">College Email</p>
+                      <p className="text-sm font-medium text-green-600">{user.collegeEmail}</p>
+                    </div>
+                  )}
                 </div>
               </Card>
-            )}
 
-            {/* Welcome Card */}
-            <Card className="p-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white" hoverable>
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl font-bold border-2 border-white/30">
-                    {user?.name?.charAt(0).toUpperCase()}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full">
-                      STUDENT
-                    </span>
-                  </div>
-                  <h1 className="text-3xl font-bold mb-2">
-                    Welcome back, {user?.name?.split(" ")[0]}! 👋
-                  </h1>
-                  <p className="text-blue-100 text-lg">
-                    Submit your ID card to request a college email address
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Upload Section */}
-            <Card className="p-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Upload ID Card
-              </h2>
-
-              {hasPendingRequest ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                  <svg
-                    className="w-12 h-12 text-yellow-600 mx-auto mb-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <p className="text-yellow-800 font-medium">
-                    You already have a pending request
-                  </p>
-                  <p className="text-yellow-700 text-sm mt-1">
-                    Please wait for admin approval before submitting a new request
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select your ID card (PDF, PNG, or JPG - Max 2MB)
-                    </label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
-                      onChange={handleFileChange}
-                      className="block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-lg file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100
-                        cursor-pointer"
-                    />
-                    {selectedFile && (
-                      <p className="mt-2 text-sm text-gray-600">
-                        Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                      </p>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={handleUpload}
-                    disabled={!selectedFile || uploadMutation.isPending}
+              {/* Upload Card */}
+              {(!latestRequest || latestRequest.status === 'REJECTED') && (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">Upload ID Card</h2>
+                  <UploadCard
+                    onFileSelected={(file) => uploadMutation.mutate(file)}
                     isLoading={uploadMutation.isPending}
-                    className="w-full sm:w-auto"
-                  >
-                    {uploadMutation.isPending ? "Uploading..." : "Submit Request"}
-                  </Button>
+                  />
                 </div>
               )}
-            </Card>
+            </div>
 
-            {/* Requests Table */}
-            <Card className="p-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                My Requests
-              </h2>
+            {/* Right Column - Request Status */}
+            <div className="lg:col-span-2">
+              {latestRequest ? (
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900">Request Status</h2>
+                    <StatusBadge status={latestRequest.status} />
+                  </div>
 
-              {requestsLoading ? (
-                <div className="text-center py-8 text-gray-500">
-                  Loading requests...
-                </div>
-              ) : !requests || requests.length === 0 ? (
-                <div className="text-center py-12">
+                  {/* OCR Results */}
+                  {latestRequest.extractedName && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">OCR Extracted Data</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-gray-50 p-3 rounded">
+                          <p className="text-xs text-gray-500">Name</p>
+                          <p className="text-sm font-medium text-gray-900">{latestRequest.extractedName}</p>
+                        </div>
+                        {latestRequest.extractedRoll && (
+                          <div className="bg-gray-50 p-3 rounded">
+                            <p className="text-xs text-gray-500">Roll Number</p>
+                            <p className="text-sm font-medium text-gray-900">{latestRequest.extractedRoll}</p>
+                          </div>
+                        )}
+                        {latestRequest.extractedCollegeId && (
+                          <div className="bg-gray-50 p-3 rounded">
+                            <p className="text-xs text-gray-500">College ID</p>
+                            <p className="text-sm font-medium text-gray-900">{latestRequest.extractedCollegeId}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Decision */}
+                  {latestRequest.aiDecision && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">AI Evaluation</h3>
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Decision</p>
+                          <p className="text-sm font-medium text-gray-900">{latestRequest.aiDecision}</p>
+                        </div>
+                        {latestRequest.confidenceScore && (
+                          <div>
+                            <p className="text-xs text-gray-500">Confidence</p>
+                            <ConfidenceBadge score={latestRequest.confidenceScore} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* College Email (if issued) */}
+                  {latestRequest.status === 'ISSUED' && user.collegeEmail && (
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-start">
+                        <svg className="h-5 w-5 text-green-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-semibold text-green-900">Email Issued!</h3>
+                          <p className="text-sm text-green-700 mt-1">
+                            Your college email: <strong>{user.collegeEmail}</strong>
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">Check your personal email for credentials.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejection Reason */}
+                  {latestRequest.status === 'REJECTED' && latestRequest.adminNotes && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <h3 className="text-sm font-semibold text-red-900">Rejection Reason</h3>
+                      <p className="text-sm text-red-700 mt-1">{latestRequest.adminNotes}</p>
+                    </div>
+                  )}
+
+                  {/* Timeline */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">Progress Timeline</h3>
+                    <div className="space-y-4">
+                      {getTimelineEvents().map((event, index) => (
+                        <div key={index} className="flex items-start">
+                          <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            event.completed ? 'bg-green-100' : 'bg-gray-100'
+                          }`}>
+                            {event.completed ? (
+                              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                            )}
+                          </div>
+                          <div className="ml-4">
+                            <p className={`text-sm font-medium ${event.completed ? 'text-gray-900' : 'text-gray-500'}`}>
+                              {event.title}
+                            </p>
+                            {event.timestamp && (
+                              <p className="text-xs text-gray-500">
+                                {new Date(event.timestamp).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ID Card Preview */}
+                  {latestRequest.documentURL && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Uploaded ID Card</h3>
+                      <img
+                        src={`http://localhost:3000${latestRequest.documentURL}`}
+                        alt="ID Card"
+                        className="max-w-full h-auto rounded border border-gray-200"
+                      />
+                    </div>
+                  )}
+                </Card>
+              ) : (
+                <Card className="p-12 text-center">
                   <svg
-                    className="w-16 h-16 text-gray-300 mx-auto mb-4"
+                    className="mx-auto h-12 w-12 text-gray-400"
                     fill="none"
-                    stroke="currentColor"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
                       strokeLinecap="round"
@@ -267,94 +285,15 @@ function DashboardPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <p className="text-gray-500">No requests yet</p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Upload your ID card to get started
+                  <h3 className="mt-4 text-lg font-medium text-gray-900">No Request Yet</h3>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Upload your college ID card to request a college email address.
                   </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Extracted Info
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Document
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {requests.map((request) => (
-                        <tr key={request.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={request.status} />
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            {request.extractedName || request.extractedRoll || request.extractedCollegeId ? (
-                              <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="space-y-1"
-                              >
-                                {request.extractedName && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500">Name:</span>
-                                    <span className="text-sm font-medium text-gray-900">{request.extractedName}</span>
-                                  </div>
-                                )}
-                                {request.extractedRoll && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500">Roll:</span>
-                                    <span className="text-sm font-medium text-gray-900">{request.extractedRoll}</span>
-                                  </div>
-                                )}
-                                {request.extractedCollegeId && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500">ID:</span>
-                                    <span className="text-sm font-medium text-gray-900">{request.extractedCollegeId}</span>
-                                  </div>
-                                )}
-                              </motion.div>
-                            ) : (
-                              <span className="text-xs text-gray-400 italic flex items-center gap-1">
-                                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                </svg>
-                                Processing...
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <a
-                              href={request.documentURL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              View Document →
-                            </a>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                </Card>
               )}
-            </Card>
-          </motion.div>
-        )}
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

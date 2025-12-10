@@ -42,6 +42,10 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# User uploaded files (may contain sensitive data)
+/uploads/*
+!uploads/.gitkeep
+
 # temp directory
 .temp
 .tmp

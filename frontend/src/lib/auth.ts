@@ -1,37 +1,106 @@
-interface DecodedToken {
-  sub: string;
+import { jwtDecode } from 'jwt-decode';
+
+export interface JwtPayload {
+  userId: string;
+  email: string;
   role: 'STUDENT' | 'ADMIN';
   iat: number;
   exp: number;
 }
 
-export const decodeToken = (token: string): DecodedToken | null => {
+const TOKEN_KEY = 'auth_token';
+
+export const setToken = (token: string): void => {
+  localStorage.setItem(TOKEN_KEY, token);
+};
+
+export const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+export const clearToken = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+};
+
+export const decodeToken = <T = JwtPayload>(token?: string): T | null => {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
+    const tokenToUse = token || getToken();
+    if (!tokenToUse) return null;
+    return jwtDecode<T>(tokenToUse);
+  } catch (error) {
+    console.error('Failed to decode token:', error);
     return null;
   }
 };
 
-export const getUserRole = (): 'STUDENT' | 'ADMIN' | null => {
-  const token = localStorage.getItem('accessToken');
-  if (!token) return null;
+export const isTokenExpired = (): boolean => {
+  const decoded = decodeToken();
+  if (!decoded) return true;
 
-  const decoded = decodeToken(token);
+  const currentTime = Date.now() / 1000;
+  return decoded.exp < currentTime;
+};
+
+export const getUserRole = (): 'STUDENT' | 'ADMIN' | null => {
+  const decoded = decodeToken();
   return decoded?.role || null;
 };
 
-export const isTokenExpired = (token: string): boolean => {
-  const decoded = decodeToken(token);
-  if (!decoded) return true;
+export const getUserId = (): string | null => {
+  const decoded = decodeToken();
+  return decoded?.userId || null;
+};
 
-  return decoded.exp * 1000 < Date.now();
+/**
+ * Get user email from token
+ */
+export const getUserEmail = (): string | null => {
+  const decoded = decodeToken();
+  return decoded?.email || null;
+};
+
+/**
+ * Check if user is authenticated
+ */
+export const isAuthenticated = (): boolean => {
+  const token = getToken();
+  if (!token) return false;
+  return !isTokenExpired(token);
+};
+
+/**
+ * Check if user is admin
+ */
+export const isAdmin = (): boolean => {
+  return getUserRole() === 'ADMIN';
+};
+
+/**
+ * Check if user is student
+ */
+export const isStudent = (): boolean => {
+  return getUserRole() === 'STUDENT';
+};
+
+export const logout = (): void => {
+  clearToken();
+  // Clear all React Query cache
+  const role = getUserRole();
+
+  // Redirect based on role
+  if (role === 'ADMIN') {
+    window.location.href = '/login';
+  } else {
+    window.location.href = '/login';
+  }
+};
+
+/**
+ * Get redirect path based on role
+ */
+export const getRedirectPath = (): string => {
+  const role = getUserRole();
+  if (role === 'ADMIN') return '/admin';
+  if (role === 'STUDENT') return '/dashboard';
+  return '/login';
 };

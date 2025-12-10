@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-type Status = "PENDING" | "APPROVED" | "REJECTED";
+type Status = "PENDING" | "APPROVED" | "REJECTED" | "ISSUED";
 
 interface StatusBadgeProps {
   status: Status;
@@ -18,6 +18,10 @@ const statusConfig = {
   REJECTED: {
     color: "bg-red-100 text-red-800 border-red-200",
     label: "Rejected",
+  },
+  ISSUED: {
+    color: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    label: "Issued",
   },
 };
 

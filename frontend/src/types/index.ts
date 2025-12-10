@@ -6,6 +6,7 @@ export interface User {
   collegeEmail?: string;
   emailIssued?: boolean;
   emailIssuedAt?: string;
+  profilePhotoUrl?: string;
 }
 
 export type EmailRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ISSUED';
@@ -31,16 +32,20 @@ export interface AuditLog {
 export interface EmailRequest {
   id: string;
   studentId: string;
-  student: User;
+  student: User | null; // Can be null for old/orphaned requests
+  user?: User; // Alias for consistency with backend
   documentURL: string;
   status: EmailRequestStatus;
-  extractedName?: string;
-  extractedRoll?: string;
-  extractedCollegeId?: string;
-  aiDecision?: string;
-  confidenceScore?: number;
-  adminNotes?: string;
-  processedAt?: string;
+  extractedName?: string | null;
+  extractedRoll?: string | null;
+  extractedCollegeId?: string | null;
+  ocrCompletedAt?: string | null;
+  aiDecision?: string | null;
+  confidenceScore?: number | null;
+  adminNotes?: string | null;
+  processedAt?: string | null;
+  emailSentAt?: string | null;
+  emailDeliveryStatus?: 'PENDING' | 'SENT' | 'FAILED' | 'BOUNCED';
   createdAt: string;
   updatedAt: string;
   auditLogs?: AuditLog[];
@@ -56,6 +61,7 @@ export interface IssuedEmailHistory {
 
 export interface DashboardStats {
   totalRequests: number;
+  total: number; // Alias
   pending: number;
   approved: number;
   rejected: number;
@@ -64,13 +70,11 @@ export interface DashboardStats {
 }
 
 export interface PaginatedResponse<T> {
-  requests: T[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface TimelineEvent {

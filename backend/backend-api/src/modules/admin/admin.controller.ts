@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Put,
   Param,
   Body,
   Query,
@@ -21,6 +22,8 @@ import {
   RejectRequestDto,
   IssueEmailDto,
 } from './dto/admin-requests.dto';
+import { EmailSettingsDto } from './dto/email-settings.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RoleGuard)
@@ -34,7 +37,8 @@ export class AdminController {
    */
   @Get('requests')
   async getAllRequests(@Query() query: GetRequestsQueryDto, @Request() req) {
-    return this.adminService.getAllRequests(query, req.user.id);
+    // getAllRequests already returns PaginatedRequestsDto with flat structure
+    return this.adminService.getAllRequests(query, req.user.userId);
   }
 
   /**
@@ -57,7 +61,7 @@ export class AdminController {
     @Body() dto: ApproveRequestDto,
     @Request() req,
   ) {
-    return this.adminService.approveRequest(id, req.user.id, dto.adminNotes);
+    return this.adminService.approveRequest(id, req.user.userId, dto.adminNotes);
   }
 
   /**
@@ -66,17 +70,20 @@ export class AdminController {
    */
   @Patch('requests/:id/reject')
   @HttpCode(HttpStatus.OK)
+  @Patch('requests/:id/reject')
+  @HttpCode(HttpStatus.OK)
   async rejectRequest(
     @Param('id') id: string,
     @Body() dto: RejectRequestDto,
     @Request() req,
   ) {
-    return this.adminService.rejectRequest(id, req.user.id, dto.adminNotes);
+    // adminNotes is required in RejectRequestDto
+    return this.adminService.rejectRequest(id, req.user.userId, dto.adminNotes);
   }
 
   /**
    * DAY-7: POST /admin/requests/:id/issue-email
-   * Issue college email (DB only, no actual email sending)
+   * Issue college email with real delivery via Nodemailer
    */
   @Post('requests/:id/issue-email')
   @HttpCode(HttpStatus.OK)
@@ -85,9 +92,9 @@ export class AdminController {
     @Body() dto: IssueEmailDto,
     @Request() req,
   ) {
-    return this.adminService.issueCollegeEmailDbOnly(
+    return this.adminService.issueCollegeEmailWithDelivery(
       id,
-      req.user.id,
+      req.user.userId,
       dto.adminNotes,
     );
   }
@@ -108,5 +115,52 @@ export class AdminController {
   @Get('stats')
   async getDashboardStats() {
     return this.adminService.getDashboardStats();
+  }
+
+  /**
+   * GET /admin/email-settings
+   * Get current email settings
+   */
+  @Get('email-settings')
+  async getEmailSettings() {
+    return this.adminService.getEmailSettings();
+  }
+
+  /**
+   * PUT /admin/email-settings
+   * Update email settings
+   */
+  @Put('email-settings')
+  @HttpCode(HttpStatus.OK)
+  async updateEmailSettings(@Body() dto: EmailSettingsDto) {
+    return this.adminService.updateEmailSettings(dto);
+  }
+
+  /**
+   * POST /admin/email-settings/test
+   * Send test email
+   */
+  @Post('email-settings/test')
+  @HttpCode(HttpStatus.OK)
+  async sendTestEmail(@Body() body: { toEmail: string }) {
+    return this.adminService.sendTestEmail(body.toEmail);
+  }
+
+  /**
+   * PUT /admin/change-password
+   * Change admin password (ADMIN ONLY)
+   * Requires: oldPassword + newPassword
+   */
+  @Put('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Request() req,
+  ) {
+    return this.adminService.changeAdminPassword(
+      req.user.userId,
+      dto.oldPassword,
+      dto.newPassword,
+    );
   }
 }

@@ -4,7 +4,7 @@ export interface TimelineEvent {
   id: string;
   title: string;
   description?: string;
-  timestamp?: string;
+  timestamp?: string | null;
   status: 'completed' | 'current' | 'pending';
   icon?: string;
 }

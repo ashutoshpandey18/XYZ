@@ -77,27 +77,12 @@ export class EmailRequestController {
   }
 
   // Admin: Get all pending requests
+  // Admin: Get all pending requests
   @Get()
   @UseGuards(RoleGuard)
   @Roles('ADMIN')
   async getAllPendingRequests() {
     return this.emailRequestService.getAllPendingRequests();
-  }
-
-  // Admin: Approve request
-  @Patch(':id/approve')
-  @UseGuards(RoleGuard)
-  @Roles('ADMIN')
-  async approveRequest(@Param('id') id: string) {
-    return this.emailRequestService.approveRequest(id);
-  }
-
-  // Admin: Reject request
-  @Patch(':id/reject')
-  @UseGuards(RoleGuard)
-  @Roles('ADMIN')
-  async rejectRequest(@Param('id') id: string) {
-    return this.emailRequestService.rejectRequest(id);
   }
 
   // Trigger OCR extraction for a request

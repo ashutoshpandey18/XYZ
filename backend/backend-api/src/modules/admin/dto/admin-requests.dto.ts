@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsInt, Min, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GetRequestsQueryDto {
@@ -38,9 +38,9 @@ export class ApproveRequestDto {
 }
 
 export class RejectRequestDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  adminNotes?: string;
+  adminNotes: string; // Required for rejection
 }
 
 export class IssueEmailDto {

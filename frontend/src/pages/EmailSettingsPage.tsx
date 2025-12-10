@@ -1,56 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
+import { emailSettingsApi } from '../lib/api';
 
 export default function EmailSettingsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Email settings state (stored locally for now)
+  // Email settings state
   const [settings, setSettings] = useState({
-    smtpHost: localStorage.getItem('smtp_host') || '',
-    smtpPort: localStorage.getItem('smtp_port') || '587',
-    smtpUser: localStorage.getItem('smtp_user') || '',
-    smtpPass: localStorage.getItem('smtp_pass') || '',
-    fromEmail: localStorage.getItem('from_email') || '',
-    fromName: localStorage.getItem('from_name') || 'College Admin',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPass: '',
+    fromEmail: '',
+    fromName: 'College Admin',
+  });
+
+  // Fetch current settings
+  const { data: currentSettings } = useQuery({
+    queryKey: ['email-settings'],
+    queryFn: () => emailSettingsApi.getSettings(),
+  });
+
+  // Update settings when data loads
+  useEffect(() => {
+    if (currentSettings) {
+      setSettings({
+        smtpHost: currentSettings.smtpHost || '',
+        smtpPort: currentSettings.smtpPort || 587,
+        smtpUser: currentSettings.smtpUser || '',
+        smtpPass: '', // Never populate password from backend
+        fromEmail: currentSettings.fromEmail || '',
+        fromName: currentSettings.fromName || 'College Admin',
+      });
+    }
+  }, [currentSettings]);
+
+  // Save settings mutation
+  const saveMutation = useMutation({
+    mutationFn: (data: typeof settings) => emailSettingsApi.updateSettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-settings'] });
+      toast.success('Email settings saved successfully!');
+      setSettings(prev => ({ ...prev, smtpPass: '' })); // Clear password field
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to save settings');
+    },
+  });
+
+  // Test email mutation
+  const testEmailMutation = useMutation({
+    mutationFn: (email: string) => emailSettingsApi.sendTestEmail(email),
+    onSuccess: (_, email) => {
+      toast.success(`Test email sent successfully to ${email}!`);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to send test email');
+    },
   });
 
   const handleSave = async () => {
-    setIsSaving(true);
-
     // Validation
     if (!settings.smtpHost || !settings.smtpPort || !settings.smtpUser || !settings.fromEmail) {
       toast.error('Please fill in all required fields');
-      setIsSaving(false);
       return;
     }
 
-    // Save to localStorage (Day-9 will connect to backend)
-    try {
-      localStorage.setItem('smtp_host', settings.smtpHost);
-      localStorage.setItem('smtp_port', settings.smtpPort);
-      localStorage.setItem('smtp_user', settings.smtpUser);
-      if (settings.smtpPass) {
-        localStorage.setItem('smtp_pass', settings.smtpPass);
-      }
-      localStorage.setItem('from_email', settings.fromEmail);
-      localStorage.setItem('from_name', settings.fromName);
-
-      setTimeout(() => {
-        setIsSaving(false);
-        toast.success('Email settings saved successfully!');
-      }, 1000);
-    } catch (error) {
-      setIsSaving(false);
-      toast.error('Failed to save settings');
+    if (!settings.smtpPass && !currentSettings?.id) {
+      toast.error('Password is required for new configuration');
+      return;
     }
-  };
 
-  const handleTestEmail = () => {
-    toast.info('Email test will be available in Day-9 when Nodemailer is integrated');
+    saveMutation.mutate(settings);
   };
 
   return (
@@ -174,31 +200,7 @@ export default function EmailSettingsPage() {
             </p>
           </div>
 
-          {/* Warning Banner */}
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-yellow-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  <strong>Day-9 Feature:</strong> These settings are currently stored locally. In
-                  Day-9, they will be saved to the backend and Nodemailer will be integrated for
-                  actual email sending.
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Warning Banner - REMOVED since backend is now integrated */}
 
           {/* Settings Form */}
           <motion.div
@@ -234,7 +236,7 @@ export default function EmailSettingsPage() {
                     <input
                       type="number"
                       value={settings.smtpPort}
-                      onChange={(e) => setSettings({ ...settings, smtpPort: e.target.value })}
+                      onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) || 587 })}
                       placeholder="587"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
@@ -314,17 +316,23 @@ export default function EmailSettingsPage() {
             <div className="border-t border-gray-200 pt-6 flex space-x-4">
               <button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={saveMutation.isPending}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSaving ? 'Saving...' : 'Save Settings'}
+                {saveMutation.isPending ? 'Saving...' : 'Save Settings'}
               </button>
 
               <button
-                onClick={handleTestEmail}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"
+                onClick={() => {
+                  const email = prompt('Enter email address to send test email:');
+                  if (email) {
+                    testEmailMutation.mutate(email);
+                  }
+                }}
+                disabled={testEmailMutation.isPending || !currentSettings?.id}
+                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Test Email
+                {testEmailMutation.isPending ? 'Sending...' : 'Test Email'}
               </button>
             </div>
           </motion.div>

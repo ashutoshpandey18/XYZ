@@ -1,69 +1,85 @@
+/**
+ * Admin User Creation Script
+ *
+ * @description Creates the initial admin user for the application
+ * @usage node create-admin.js
+ *
+ * Use cases:
+ * - Initial deployment setup
+ * - New environment configuration
+ * - First-time application installation
+ *
+ * @author College Email SaaS Team
+ * @version 1.0.0
+ */
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
-async function createAdmin() {
+const ADMIN_CONFIG = {
+  name: process.env.ADMIN_NAME || 'Super Admin',
+  email: process.env.ADMIN_EMAIL || 'admin@college.edu',
+  password: process.env.ADMIN_PASSWORD || 'ChangeMe123!',
+  role: 'ADMIN'
+};
+
+const SALT_ROUNDS = 10;
+
+/**
+ * Creates or validates the admin user in the database
+ */
+async function createAdminUser() {
   try {
-    console.log('\n🔧 Creating Admin User...\n');
+    console.log('\n[ADMIN SETUP] Initializing Admin User Setup\n');
 
-    // Admin credentials
-    const adminData = {
-      name: 'Super Admin',
-      email: 'admin@college.edu',
-      password: 'Admin@123', // Change this password after first login!
-      role: 'ADMIN'
-    };
-
-    // Check if admin already exists
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: adminData.email }
+    const existingUser = await prisma.user.findUnique({
+      where: { email: ADMIN_CONFIG.email }
     });
 
-    if (existingAdmin) {
-      console.log('❌ Admin user already exists with email:', adminData.email);
+    if (existingUser) {
+      console.log('[INFO] Admin user already exists');
 
-      if (existingAdmin.role !== 'ADMIN') {
-        // Promote existing user to admin
+      if (existingUser.role !== 'ADMIN') {
         await prisma.user.update({
-          where: { email: adminData.email },
+          where: { email: ADMIN_CONFIG.email },
           data: { role: 'ADMIN' }
         });
-        console.log('✅ User promoted to ADMIN role');
+        console.log('[SUCCESS] User role updated to ADMIN');
       }
 
-      console.log('\n📋 Admin Details:');
-      console.log('  Email:', adminData.email);
-      console.log('  Password: Use your existing password or reset it\n');
+      console.log('\nExisting Admin Details:');
+      console.log('   Email:', ADMIN_CONFIG.email);
+      console.log('   Status: Active');
+      console.log('\nTo reset password, use: node update-admin-password.js\n');
       return;
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(adminData.password, 10);
+    const passwordHash = await bcrypt.hash(ADMIN_CONFIG.password, SALT_ROUNDS);
 
-    // Create admin user
-    const admin = await prisma.user.create({
+    await prisma.user.create({
       data: {
-        name: adminData.name,
-        email: adminData.email,
-        passwordHash: passwordHash,
-        role: 'ADMIN'
+        name: ADMIN_CONFIG.name,
+        email: ADMIN_CONFIG.email,
+        passwordHash,
+        role: ADMIN_CONFIG.role
       }
     });
 
-    console.log('✅ Admin user created successfully!\n');
-    console.log('📋 Admin Login Credentials:');
-    console.log('  Email:', adminData.email);
-    console.log('  Password:', adminData.password);
-    console.log('\n⚠️  IMPORTANT: Change this password after first login!\n');
-    console.log('🔗 Login at: http://localhost:5173/login\n');
+    console.log('[SUCCESS] Admin user created successfully\n');
+    console.log('Login Credentials:');
+    console.log('   Email:', ADMIN_CONFIG.email);
+    console.log('   Password:', ADMIN_CONFIG.password);
+    console.log('\n[SECURITY WARNING] Change this password immediately after first login');
+    console.log('Admin Panel: http://localhost:5173/login\n');
 
   } catch (error) {
-    console.error('❌ Error creating admin:', error.message);
+    console.error('\n[ERROR]', error.message);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-createAdmin();
+createAdminUser();

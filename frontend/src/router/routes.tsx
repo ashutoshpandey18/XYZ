@@ -1,45 +1,58 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
-import LoginPage from "../pages/LoginPage.tsx";
-import SignupPage from "../pages/SignupPage";
-import DashboardPage from "../pages/DashboardPage";
-import EnhancedStudentDashboard from "../pages/EnhancedStudentDashboard";
-import NewAdminDashboard from "../pages/NewAdminDashboard";
-import EnhancedAdminDashboard from "../pages/EnhancedAdminDashboard";
-import AuditLogsPage from "../pages/AuditLogsPage";
-import EmailSettingsPage from "../pages/EmailSettingsPage";
-import ProtectedRoute from "./ProtectedRoute";
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import LoginPage from '../pages/LoginPage';
+import SignupPage from '../pages/SignupPage';
+import VerifyEmailPage from '../pages/VerifyEmailPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
+import DashboardPage from '../pages/DashboardPage';
+import AdminDashboard from '../pages/AdminDashboard';
+import AuditLogsPage from '../pages/AuditLogsPage';
+import EmailSettingsPage from '../pages/EmailSettingsPage';
+import ProtectedRoute from './ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
     element: <Navigate to="/login" replace />,
   },
   {
-    path: "/login",
+    path: '/login',
     element: <LoginPage />,
   },
   {
-    path: "/register",
+    path: '/signup',
     element: <SignupPage />,
   },
   {
-    path: "/dashboard",
+    path: '/verify-email',
+    element: <VerifyEmailPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
+  },
+  {
+    path: '/dashboard',
     element: (
       <ProtectedRoute requiredRole="STUDENT">
-        <EnhancedStudentDashboard />
+        <DashboardPage />
       </ProtectedRoute>
     ),
   },
   {
-    path: "/admin",
+    path: '/admin',
     element: (
       <ProtectedRoute requiredRole="ADMIN">
-        <EnhancedAdminDashboard />
+        <AdminDashboard />
       </ProtectedRoute>
     ),
   },
   {
-    path: "/admin/audit-logs",
+    path: '/admin/audit-logs',
     element: (
       <ProtectedRoute requiredRole="ADMIN">
         <AuditLogsPage />
@@ -47,7 +60,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/settings",
+    path: '/admin/email-settings',
     element: (
       <ProtectedRoute requiredRole="ADMIN">
         <EmailSettingsPage />

@@ -1,53 +1,43 @@
 # 🎓 College Email SaaS Platform
 
-[![NestJS](https://img.shields.io/badge/NestJS-11.0.1-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
-[![React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.19.0-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+> **Automated college email provisioning system with OCR verification, AI decision-making, and secure email issuance.**
 
-> **A fully automated, production-grade SaaS platform for issuing and managing institutional email addresses to verified students with intelligent OCR, email delivery reliability, and comprehensive admin controls.**
+A production-grade SaaS platform that streamlines the creation and distribution of institutional email addresses through intelligent document verification, multi-stage approval workflows, and comprehensive administrative controls.
 
 ---
 
 ## 📋 Table of Contents
 
-- [Problem Statement](#-problem-statement)
-- [Solution](#-solution)
-- [Tech Stack](#-tech-stack)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Getting Started](#-getting-started)
-- [API Documentation](#-api-documentation)
-- [Challenges Solved](#-challenges-solved)
-- [Project Structure](#-project-structure)
-- [Screenshots](#-screenshots)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Core Features](#core-features)
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Deployment](#deployment)
+- [Roadmap](#roadmap)
+- [License](#license)
 
 ---
 
-## 🎯 Problem Statement
+## 🎯 Overview
 
-Educational institutions face **significant challenges** in managing student email accounts:
+The College Email SaaS Platform automates the entire lifecycle of institutional email creation—from identity verification to credential delivery—reducing manual processing time from hours to minutes while maintaining security and compliance standards.
 
-- ✗ **Manual Verification**: Hours spent manually verifying student identities through ID cards
-- ✗ **Email Delivery Failures**: No automated retry mechanism when credential emails fail to send
-- ✗ **Security Risks**: Weak password policies and lack of account verification workflows
-- ✗ **No Audit Trail**: Unable to track who approved/rejected requests and when
-- ✗ **Scalability Issues**: Manual processes don't scale with thousands of students
-- ✗ **Poor User Experience**: Students wait days for email accounts with no status visibility
+### Key Capabilities
 
----
+- **Intelligent Document Verification**: OCR-powered ID card processing with AI-assisted decision-making
+- **Multi-Stage Approval Workflow**: Configurable review pipeline with automated and manual validation
+- **Real-Time Status Tracking**: Live dashboard updates for students throughout the approval process
+- **Secure Email Provisioning**: Encrypted SMTP delivery with retry logic and delivery tracking
+- **Comprehensive Admin Controls**: Full audit logging, request management, and system configuration
 
-## 💡 Solution
+### Use Cases
 
-A **fully automated, enterprise-grade SaaS platform** that:
-
-✅ **Automates student verification** using OCR to extract data from uploaded ID cards
-✅ **Issues college emails instantly** with secure, randomly-generated passwords
+- Universities automating student email provisioning
+- Colleges managing alumni email accounts
+- Educational institutions requiring verified identity management
+- Multi-campus organizations needing centralized email administration
 ✅ **Guarantees email delivery** with exponential backoff retry mechanism (3 attempts)
 ✅ **Provides real-time status tracking** for students and comprehensive admin dashboards
 ✅ **Enforces security best practices** with JWT auth, rate limiting, and single-use tokens
@@ -58,501 +48,510 @@ A **fully automated, enterprise-grade SaaS platform** that:
 ## 🛠️ Tech Stack
 
 ### **Backend**
-- **NestJS** `11.0.1` - Enterprise-grade Node.js framework with TypeScript
-- **Prisma ORM** `6.19.0` - Type-safe database access with PostgreSQL
-- **PostgreSQL** `15` - Production-grade relational database
-- **Nodemailer** `7.0.11` - Professional SMTP email delivery
-- **@nestjs/jwt** `11.0.1` - JWT authentication with Passport.js
-- **passport-jwt** `4.0.1` - JWT strategy for Passport
-- **bcrypt** `6.0.0` - Industry-standard password hashing (10 rounds)
-- **crypto-js** `4.2.0` - AES-256 encryption for sensitive data
+## 🏗 Architecture
 
-### **Frontend**
-- **React** `19.2.0` - Modern UI library
-- **Vite** `7.2.4` - Lightning-fast build tool
-- **TanStack Query** `5.90.11` - Powerful server-state management
-- **Tailwind CSS** `4.1.17` - Utility-first styling framework
-- **Framer Motion** `12.23.24` - Production-ready animations
-- **React Hook Form** `7.67.0` - Performant form validation
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Student Portal                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ ID Upload    │  │ Profile Photo│  │ Status Track │          │
+│  │ Component    │  │ Uploader     │  │ Timeline     │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     NestJS Backend API                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Auth Module    │  Email Request Module  │  Admin Module │   │
+│  │  ─────────────  │  ──────────────────────  │  ─────────── │   │
+│  │  • JWT Auth     │  • OCR Pipeline         │  • Dashboard  │   │
+│  │  • Guards       │  • AI Decision Engine   │  • Audit Logs │   │
+│  │  • Rate Limit   │  • File Handler         │  • Analytics  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+         ┌──────────────────┐  ┌──────────────────┐
+         │  PostgreSQL DB   │  │  SMTP Service    │
+         │  (Prisma ORM)    │  │  (Email Queue)   │
+         │  • Users         │  │  • Templates     │
+         │  • Requests      │  │  • Retry Logic   │
+         │  • Audit Logs    │  │  • Delivery Log  │
+         └──────────────────┘  └──────────────────┘
+```
 
-### **DevOps & Infrastructure**
-- **Docker Compose** - Containerized PostgreSQL database
-- **TypeScript** `5.9.3` - End-to-end type safety
-- **ESLint + Prettier** - Code quality enforcement
+### Data Flow
 
-### **Advanced Features**
-- **Tesseract.js** `6.0.1` - OCR for ID card data extraction
-- **Sharp** `0.34.5` - High-performance image optimization
-- **@nestjs/schedule** - CRON jobs for automated cleanup
-- **@nestjs/throttler** - Intelligent rate limiting
+1. **Upload Phase**: Student submits ID card → File stored locally → Sharp optimization
+2. **OCR Phase**: Tesseract.js extracts text → Preprocessing → Structured parsing
+3. **AI Phase**: Similarity scoring → Confidence calculation → Decision (APPROVE/REVIEW)
+4. **Review Phase**: Admin reviews request → Approves/rejects → Audit log created
+5. **Issuance Phase**: Email generated → SMTP delivery → Status updated → Student notified
 
 ---
 
-## ✨ Key Features
+## ✨ Core Features
 
-### 🔐 **Authentication & Security**
-- JWT-based stateless authentication with refresh tokens
-- Email verification (24-hour single-use tokens)
-- Password reset flow (15-minute expiring tokens)
-- bcrypt password hashing with salt rounds
-- AES-256 encryption for SMTP credentials in database
-- Rate limiting on all sensitive endpoints (100/min global)
-- CORS, Helmet.js security headers
+### 🔍 OCR Processing Pipeline
 
-### 👨‍🎓 **Student Features**
-- User registration with email verification workflow
-- Profile photo upload with automatic optimization (256x256px, JPEG quality 80)
-- ID card upload for college email requests
-- Real-time request status tracking with timeline visualization
-- Email delivery status monitoring (PENDING → SENT → FAILED)
-- Secure college email credential delivery via SMTP
+Advanced optical character recognition system for automated ID verification:
 
-### 👨‍💼 **Admin Dashboard**
-- Comprehensive request management (Approve/Reject/Issue Email)
-- Real-time statistics (Pending, Approved, Rejected counts)
-- Email delivery timeline with retry attempt logs
-- Manual retry button for failed email deliveries
-- Add notes to requests for internal documentation
-- Bulk actions and advanced filtering
+- **Preprocessing Engine**: Image enhancement, noise reduction, contrast optimization
+- **Tesseract Integration**: Multi-language text extraction with confidence scoring
+- **Structured Parsing**: Intelligent field detection for name, roll number, department, college ID
+- **Error Handling**: Graceful degradation with manual review fallback
+- **Performance Optimization**: Async processing, queued jobs, parallel extraction
 
-### 📧 **Professional Email System**
-- **Dynamic SMTP Configuration**: Database-first with ENV fallback
-- **Email Delivery Reliability**: Exponential backoff retry (30s → 2min → 5min)
-- **Beautiful HTML Templates**: Responsive, mobile-optimized email designs
-- **Multiple Providers**: Support for Gmail, Outlook, SendGrid, Mailgun
-- **Delivery Tracking**: Full audit trail with EmailRetryLog model
-- **Test Email Functionality**: Verify SMTP configuration before production
+### 🤖 AI Decision Engine
 
-### 📊 **Audit & Compliance**
-- Complete audit log system tracking all admin actions
-- IP address and User-Agent capture for security
-- Filtering by action type, admin, date range
-- Pagination support (20 logs per page)
-- Actions logged: APPROVE_REQUEST, REJECT_REQUEST, ISSUE_EMAIL, ADD_NOTES
+Machine learning-powered verification system:
 
-### 🤖 **Intelligent OCR System**
-- Automatic ID card text extraction using Tesseract.js
-- Pre-processing with Sharp for enhanced accuracy
-- Extracts: Student name, Roll number, Department, Year
-- AI confidence scoring for extracted data
-- Fallback to manual entry if OCR confidence < 70%
+- **Text Similarity Analysis**: Levenshtein distance, fuzzy matching, phonetic algorithms
+- **Confidence Scoring**: 0-100% confidence based on multiple validation factors
+- **Decision Logic**:
+  - **90-100%**: Auto-approve (high confidence)
+  - **70-89%**: Manual review required (medium confidence)
+  - **0-69%**: Auto-reject with reason (low confidence)
+- **Explainable AI**: Detailed reasoning for each decision
+- **Continuous Learning**: Score calibration based on admin feedback
 
-### 🧹 **Automated Maintenance**
-- **Daily CRON Jobs**:
-  - Cleanup expired email verification tokens (midnight)
-  - Cleanup expired password reset tokens (midnight)
-  - Remove unused profile photos from orphaned requests
-- Zero manual intervention required
+### 🔐 Secure Backend Architecture
 
-### 🎨 **User Experience**
-- **Real-time Animations**: Framer Motion for smooth transitions
-- **Toast Notifications**: Instant feedback on all actions
-- **Loading States**: Skeleton loaders during data fetching
-- **Responsive Design**: Mobile-first Tailwind CSS
-- **Accessibility**: ARIA labels, keyboard navigation
+Enterprise-grade NestJS application:
+
+**Modular Design**
+- `AuthModule`: JWT authentication, refresh tokens, password reset
+- `EmailRequestModule`: Request lifecycle, OCR orchestration, status management
+- `AdminModule`: Dashboard APIs, analytics, audit logs
+- `EmailModule`: SMTP configuration, template rendering, delivery tracking
+- `StudentModule`: Profile management, request history
+
+**Security Features**
+- **Authentication**: JWT with RS256 signing, secure cookie storage
+- **Authorization**: Role-based guards (Student/Admin), resource-level permissions
+- **Rate Limiting**: Configurable throttling per endpoint
+- **Password Security**: Bcrypt hashing with salt rounds
+- **Input Validation**: Class-validator decorators, DTO sanitization
+- **CORS**: Configurable origins, credentials support
+
+**Data Layer**
+- **Prisma ORM**: Type-safe database queries, migration management
+- **Transaction Support**: ACID compliance for critical operations
+- **Query Optimization**: Indexed fields, eager loading, pagination
+- **Soft Deletes**: Data retention for audit compliance
+
+### 📁 File Handling System
+
+Production-ready file management:
+
+- **Local Upload Handler**: Multer integration with size limits, type validation
+- **Image Optimization**: Sharp processing for profile photos (resize, compress, format conversion)
+- **Storage Strategy**: Organized directory structure, collision-free naming
+- **Public URL Generation**: Secure file serving with access controls
+- **Cleanup Jobs**: Automated removal of orphaned files
+
+### 📧 Email Issuance System
+
+Reliable SMTP delivery infrastructure:
+
+- **Template Engine**: Handlebars-based HTML email templates
+- **Retry Logic**: Exponential backoff for failed deliveries (3 attempts)
+- **Delivery Tracking**: Comprehensive logs with timestamps, status, error messages
+- **Queue System**: Async processing to prevent blocking
+- **Admin Controls**: SMTP configuration UI, test email functionality
+- **Security**: AES-256 encryption for stored credentials, TLS for transmission
+
+### 💻 Frontend Application
+
+Modern React application with TypeScript:
+
+**Student Dashboard**
+- Request submission form with drag-and-drop ID upload
+- Profile photo uploader with preview and cropping
+- Real-time status timeline with visual indicators
+- Request history table with filtering
+
+**Admin Dashboard**
+- Request management table with sorting and pagination
+- Filter controls: Pending, Approved, Rejected, Issued
+- OCR results viewer with extracted fields
+- AI decision panel with confidence score
+- Quick approve/reject actions with reason input
+- Bulk operations support
+
+**Additional Pages**
+- **Timeline Modal**: Detailed request journey visualization
+- **Audit Logs**: Comprehensive activity tracking with IP addresses
+- **Email Settings**: SMTP configuration with test functionality
+- **Analytics**: Request statistics, approval rates, processing times
+
+**Technical Highlights**
+- **State Management**: TanStack Query for server state, React hooks for local state
+- **Animations**: Framer Motion for smooth transitions
+- **Form Handling**: React Hook Form with Zod validation
+- **UI Components**: Custom component library with consistent design system
+- **Real-Time Updates**: Polling strategy for dashboard updates
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
 
 ---
 
-## 🏗️ System Architecture
+## 🛠 Technology Stack
 
-### **High-Level Architecture**
+### Backend
+- **Framework**: NestJS 11.x (Node.js 20.x)
+- **Language**: TypeScript 5.x
+- **Database**: PostgreSQL 15.x
+- **ORM**: Prisma 6.x
+- **Authentication**: JWT, Bcrypt
+- **OCR**: Tesseract.js 5.x
+- **Image Processing**: Sharp
+- **Email**: Nodemailer with SMTP
+- **Validation**: Class-validator, Class-transformer
 
-```
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│   Frontend  │ ──────► │   Backend    │ ──────► │ PostgreSQL  │
-│  (React +   │  HTTPS  │  (NestJS +   │  Prisma │  Database   │
-│   Vite)     │         │  TypeScript) │         │             │
-└─────────────┘         └──────────────┘         └─────────────┘
-                               │
-                               ├──────► SMTP Server (Gmail/Outlook)
-                               │        (Email Delivery)
-                               │
-                               ├──────► Tesseract.js Worker
-                               │        (OCR Processing)
-                               │
-                               └──────► Sharp
-                                        (Image Optimization)
-```
+### Frontend
+- **Framework**: React 19.x
+- **Build Tool**: Vite 7.x
+- **Language**: TypeScript 5.x
+- **Routing**: React Router 7.x
+- **State Management**: TanStack Query 5.x
+- **Styling**: Tailwind CSS 3.x
+- **Animations**: Framer Motion 11.x
+- **Forms**: React Hook Form + Zod
 
-### **Request Flow**
-
-```
-Student Signup
-    ↓
-Email Verification (24h token)
-    ↓
-Login → Upload ID Card
-    ↓
-OCR Extraction → Create Request
-    ↓
-Admin Reviews Request
-    ↓
-Approve → Generate College Email
-    ↓
-Email Delivery (with retry mechanism)
-    ↓
-Student Receives Credentials
-```
-
-### **Backend Architecture Pattern**
-
-```
-┌───────────────────────────────────────────────────────┐
-│                     Controllers                        │
-│  (HTTP Handlers, Guards, Throttling, Validation)      │
-└────────────────────┬──────────────────────────────────┘
-                     │
-┌────────────────────▼──────────────────────────────────┐
-│                      Services                          │
-│  (Business Logic, Email Sending, OCR Processing)      │
-└────────────────────┬──────────────────────────────────┘
-                     │
-┌────────────────────▼──────────────────────────────────┐
-│                 Prisma Service                         │
-│        (Database Access, Transaction Management)       │
-└────────────────────┬──────────────────────────────────┘
-                     │
-┌────────────────────▼──────────────────────────────────┐
-│                  PostgreSQL Database                   │
-│  (Users, Requests, Logs, Tokens, Settings, History)   │
-└───────────────────────────────────────────────────────┘
-```
-
-### **Key Components**
-
-- **Modules**: Auth, Student, Admin, Email, EmailRequest
-- **Guards**: JwtAuthGuard, RoleGuard (ADMIN/STUDENT)
-- **Services**: EmailService, OCRService, AuditLogService, ImageUploadService
-- **Schedulers**: FileCleanupService (CRON), TokenCleanupService (CRON)
-- **Interceptors**: FileInterceptor (Multer for file uploads)
+### DevOps
+- **Containerization**: Docker & Docker Compose
+- **Database Migrations**: Prisma Migrate
+- **Environment Management**: dotenv
+- **Process Management**: PM2 (production)
+- **Logging**: Winston (backend), Console (frontend)
 
 ---
 
 ## 🚀 Getting Started
 
-### **Prerequisites**
+### Prerequisites
 
-- **Node.js** v20.18.0 or higher ([Download](https://nodejs.org/))
-- **Docker** and Docker Compose ([Download](https://www.docker.com/))
-- **Git** ([Download](https://git-scm.com/))
+- **Node.js**: 20.x or higher
+- **PostgreSQL**: 15.x or higher
+- **npm**: 10.x or higher
+- **Docker** (optional): For containerized database
 
----
+### Installation
 
-## 📦 **Complete Setup Guide**
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ashutoshpandey18/college-email-saas.git
+   cd college-email-saas
+   ```
 
-### **Step 1: Clone the Repository**
+2. **Install backend dependencies**
+   ```bash
+   cd backend/backend-api
+   npm install
+   ```
 
-```bash
-git clone https://github.com/ashutoshpandey18/college-email-saas.git
-cd college-email-saas
-```
+3. **Install frontend dependencies**
+   ```bash
+   cd ../../frontend
+   npm install
+   ```
 
----
+4. **Set up PostgreSQL**
 
-### **Step 2: Start PostgreSQL Database (Docker)**
+   Using Docker:
+   ```bash
+   cd ../infra
+   docker-compose -f docker-compose.dev.yml up -d
+   ```
 
-Navigate to the `infra` folder and start the database:
+   Or install PostgreSQL locally and create a database:
+   ```sql
+   CREATE DATABASE college_email;
+   ```
 
-```bash
-cd infra
-docker-compose -f docker-compose.dev.yml up -d
-```
+5. **Configure environment variables**
 
-**Verify Database is Running:**
-```bash
-docker ps
-```
+   Backend (`backend/backend-api/.env`):
+   ```env
+   # Database
+   DATABASE_URL="postgresql://user:password@localhost:5432/college_email"
 
-You should see a container named `infra-postgres-1` running.
+   # Authentication
+   JWT_SECRET="your-secure-random-secret-key"
+   JWT_EXPIRATION="7d"
 
-**Database Connection Details:**
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `college_email`
-- **Username**: `admin`
-- **Password**: `admin123` (development only, change in production)
+   # SMTP Configuration
+   SMTP_HOST="smtp.gmail.com"
+   SMTP_PORT=587
+   SMTP_USER="your-email@gmail.com"
+   SMTP_PASS="your-app-specific-password"
+   SMTP_FROM_NAME="College Email System"
 
-**To Stop Database:**
-```bash
-docker-compose -f docker-compose.dev.yml down
-```
+   # Encryption
+   ENCRYPTION_KEY="your-32-character-encryption-key"
 
----
+   # Admin Account
+   ADMIN_NAME="Super Admin"
+   ADMIN_EMAIL="admin@college.edu"
+   ADMIN_PASSWORD="SecurePassword123!"
 
-### **Step 3: Backend Setup**
+   # Application
+   PORT=3000
+   FRONTEND_URL="http://localhost:5173"
+   ```
 
-#### **3.1 Navigate to Backend Directory**
+   Frontend (`frontend/.env`):
+   ```env
+   VITE_API_URL="http://localhost:3000"
+   ```
+
+6. **Run database migrations**
+   ```bash
+   cd backend/backend-api
+   npx prisma migrate deploy
+   npx prisma generate
+   ```
+
+7. **Create admin user**
+   ```bash
+   node create-admin.js
+   ```
+
+8. **Seed email settings** (optional)
+   ```bash
+   node seed-email-settings.js
+   ```
+
+### Running the Application
+
+**Backend (Terminal 1)**
 ```bash
 cd backend/backend-api
-```
-
-#### **3.2 Install Dependencies**
-```bash
-npm install
-```
-
-#### **3.3 Create Environment File**
-
-Create a `.env` file in `backend/backend-api/` directory:
-
-```bash
-# Windows PowerShell
-New-Item -Path .env -ItemType File
-
-# Mac/Linux
-touch .env
-```
-
-#### **3.4 Configure Environment Variables**
-
-Open `.env` and add the following:
-
-```env
-# ====== DATABASE ======
-DATABASE_URL="postgresql://admin:YOUR_DB_PASSWORD@localhost:5432/college_email"
-
-# ====== JWT AUTHENTICATION ======
-JWT_SECRET="your-super-secret-jwt-key-change-in-production-min-32-chars"
-JWT_EXPIRATION="7d"
-
-# ====== SMTP EMAIL CONFIGURATION (Gmail Example) ======
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your-16-digit-app-password"
-FROM_EMAIL="your-email@gmail.com"
-FROM_NAME="College Email SaaS"
-
-# ====== FRONTEND URL ======
-FRONTEND_URL="http://localhost:5173"
-
-# ====== ENCRYPTION KEY (32 characters) ======
-ENCRYPTION_KEY="8ce19b098d932ccec30a2a85025c9365"
-```
-
-#### **3.5 Generate Gmail App Password (Important!)**
-
-1. Go to [Google Account Settings](https://myaccount.google.com/apppasswords)
-2. Sign in with your Google account
-3. Click **"Select app"** → Choose **"Mail"**
-4. Click **"Select device"** → Choose **"Other"** → Type **"College Email SaaS"**
-5. Click **"Generate"**
-6. Copy the 16-character password (format: `xxxx xxxx xxxx xxxx`)
-7. Paste it in `.env` as `SMTP_PASS` (remove spaces: `xxxxxxxxxxxxxxxx`)
-
-#### **3.6 Run Database Migrations**
-```bash
-npx prisma migrate deploy
-npx prisma generate
-```
-
-**Expected Output:**
-```
-✅ All migrations have been successfully applied.
-✔ Generated Prisma Client
-```
-
-#### **3.7 Create Admin Account**
-```bash
-node create-admin.js
-```
-
-**Expected Output:**
-```
-✅ Admin user created successfully!
-📋 Admin Login Credentials:
-  Email: admin@college.edu
-  Password: Admin@123
-```
-
-#### **3.8 Start Backend Server**
-```bash
 npm run start:dev
 ```
+Backend runs on `http://localhost:3000`
 
-**Expected Output:**
-```
-[Nest] Starting Nest application...
-[EmailService] ✅ SMTP connection verified successfully!
-🚀 Application is running on: http://localhost:3000
-```
-
-**Backend is now running on:** **http://localhost:3000**
-
----
-
-### **Step 4: Frontend Setup**
-
-Open a **NEW TERMINAL** window/tab.
-
-#### **4.1 Navigate to Frontend Directory**
+**Frontend (Terminal 2)**
 ```bash
 cd frontend
-```
-
-#### **4.2 Install Dependencies**
-```bash
-npm install
-```
-
-#### **4.3 Start Development Server**
-```bash
 npm run dev
 ```
+Frontend runs on `http://localhost:5173`
 
-**Expected Output:**
-```
-VITE v7.2.4  ready in 1234 ms
+### Access the Application
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h + enter to show help
-```
+- **Student Portal**: `http://localhost:5173`
+- **Admin Dashboard**: `http://localhost:5173/admin/dashboard`
+- **API Documentation**: `http://localhost:3000/api` (if Swagger enabled)
 
-**Frontend is now running on:** **http://localhost:5173**
+### Default Admin Credentials
 
----
-
-## 🔐 **Admin Login Instructions**
-
-### **Access Admin Dashboard**
-
-1. **Open Browser** and go to: **http://localhost:5173**
-
-2. **Click "Login"** (top-right corner)
-
-3. **Enter Admin Credentials:**
-   ```
-   Email: admin@college.edu
-   Password: Admin@123
-   ```
-
-4. **Click "Sign In"**
-
-5. You will be redirected to the **Admin Dashboard** at:
-   ```
-   http://localhost:5173/admin/dashboard
-   ```
-
-### **Admin Dashboard Features**
-
-Once logged in as admin, you can:
-
-✅ **View All Student Requests**
-- See pending, approved, rejected requests
-- Real-time statistics dashboard
-
-✅ **Review Student Applications**
-- View uploaded ID cards
-- Check OCR-extracted data
-- Student profile photos
-
-✅ **Approve/Reject Requests**
-- Add approval notes
-- Issue college email credentials
-
-✅ **Issue College Emails**
-- Automatically generate email addresses
-- Send credentials via SMTP
-- Track email delivery status
-
-✅ **Monitor Email Delivery**
-- View email timeline with retry attempts
-- Manually retry failed emails
-- See delivery logs (SENT/FAILED/PENDING)
-
-✅ **Manage SMTP Settings**
-- Configure email server settings
-- Test email delivery
-- Update SMTP credentials
-
-✅ **View Audit Logs**
-- Track all admin actions
-- Filter by action type, date, admin
-- See IP addresses and timestamps
+After running `create-admin.js`, use the email and password you configured in your `.env` file to log in to the admin dashboard.
 
 ---
 
-## 📝 **Quick Commands Reference**
 
-### **Database Commands**
+### Authentication Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/auth/signup` | Student registration | No |
+| POST | `/auth/login` | User login (Student/Admin) | No |
+| POST | `/auth/forgot-password` | Initiate password reset | No |
+| POST | `/auth/reset-password` | Complete password reset | No |
+| GET | `/auth/me` | Get current user info | Yes |
+
+### Email Request Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/email-request` | Create new email request | Student |
+| GET | `/email-request/my-requests` | Get student's requests | Student |
+| GET | `/email-request/:id` | Get request details | Student/Admin |
+| PATCH | `/email-request/:id/upload-photo` | Upload profile photo | Student |
+| GET | `/email-request/:id/timeline` | Get request timeline | Student/Admin |
+
+### Admin Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/admin/requests` | List all requests (filterable) | Admin |
+| GET | `/admin/requests/:id` | Get request details with OCR | Admin |
+| PATCH | `/admin/requests/:id/approve` | Approve request | Admin |
+| PATCH | `/admin/requests/:id/reject` | Reject request | Admin |
+| POST | `/admin/requests/:id/issue-email` | Issue college email | Admin |
+| GET | `/admin/audit-logs` | Get audit logs | Admin |
+| GET | `/admin/analytics` | Get system analytics | Admin |
+
+### Email Settings Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/email/settings` | Get SMTP configuration | Admin |
+| PUT | `/email/settings` | Update SMTP configuration | Admin |
+| POST | `/email/test` | Send test email | Admin |
+| GET | `/email/delivery-logs` | Get email delivery logs | Admin |
+
+### File Serving
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/uploads/id-cards/:filename` | Serve ID card image | Student/Admin |
+| GET | `/uploads/profile-photos/:filename` | Serve profile photo | Student/Admin |
+
+---
+
+## 🌐 Deployment
+
+### Environment Setup
+
+1. **Production Database**: Set up managed PostgreSQL (AWS RDS, DigitalOcean, Supabase)
+2. **Environment Variables**: Use platform-specific secret management
+   - Heroku: `heroku config:set KEY=VALUE`
+   - Vercel: Environment Variables in dashboard
+   - AWS: SSM Parameter Store or Secrets Manager
+   - Docker: Docker secrets or env files
+
+3. **SMTP Service**: Configure production email service (SendGrid, AWS SES, Mailgun)
+4. **File Storage**: Consider cloud storage (AWS S3, Cloudinary) for production uploads
+
+### Backend Deployment
+
+**Docker Deployment**
 ```bash
-# Start database
-cd infra
-docker-compose -f docker-compose.dev.yml up -d
+# Build image
+docker build -t college-email-backend ./backend/backend-api
 
-# Stop database
-docker-compose -f docker-compose.dev.yml down
-
-# View database logs
-docker-compose -f docker-compose.dev.yml logs -f postgres
-
-# Access PostgreSQL shell
-docker exec -it infra-postgres-1 psql -U admin -d college_email
+# Run container
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://..." \
+  -e JWT_SECRET="..." \
+  college-email-backend
 ```
 
-### **Backend Commands**
+**Platform Deployment**
+- **Heroku**: Use `Procfile` with `npm run start:prod`
+- **Railway**: Auto-deploy from Git repository
+- **AWS EC2**: Use PM2 for process management
+- **DigitalOcean App Platform**: Connect GitHub repo
+
+### Frontend Deployment
+
+**Vercel** (Recommended)
 ```bash
-# Navigate to backend
-cd backend/backend-api
+npm install -g vercel
+cd frontend
+vercel --prod
+```
 
-# Install dependencies
-npm install
+**Netlify**
+```bash
+cd frontend
+npm run build
+# Deploy dist/ folder via Netlify CLI or dashboard
+```
 
-# Run migrations
+**Static Hosting**
+- Build: `npm run build`
+- Deploy `dist/` folder to any static host (S3, CloudFront, Nginx)
+
+### Database Migrations
+
+```bash
+# Production migration
 npx prisma migrate deploy
 
 # Generate Prisma Client
 npx prisma generate
-
-# Create admin account
-node create-admin.js
-
-# Start development server
-npm run start:dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm run start:prod
-
-# View Prisma Studio (Database GUI)
-npx prisma studio
 ```
 
-### **Frontend Commands**
-```bash
-# Navigate to frontend
-cd frontend
+### Post-Deployment Checklist
 
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
+- [ ] Set all environment variables
+- [ ] Run database migrations
+- [ ] Create admin user via script
+- [ ] Configure SMTP settings in admin panel
+- [ ] Test email delivery
+- [ ] Enable HTTPS/SSL
+- [ ] Set up monitoring (Sentry, LogRocket)
+- [ ] Configure backups (database snapshots)
+- [ ] Set up CI/CD pipeline
+- [ ] Enable rate limiting
+- [ ] Configure CORS for production domain
 
 ---
 
-## 🧪 **Testing the System**
+## 🗺 Roadmap
 
-### **1. Create a Student Account**
+### Phase 1: Core Enhancement (Q1 2026)
+- [ ] Real-time WebSocket notifications for students
+- [ ] Bulk email issuance for admins
+- [ ] Advanced OCR with ML model training
+- [ ] Mobile app (React Native)
 
-1. Go to **http://localhost:5173**
-2. Click **"Sign Up"**
-3. Fill in details:
-   - Name: `Test Student`
-   - Email: `student@example.com`
-   - Password: `Password123!`
-4. Click **"Sign Up"**
-5. Check your email for verification link (check spam folder)
+### Phase 2: Scalability (Q2 2026)
+- [ ] Multi-tenancy support for multiple institutions
+- [ ] Redis caching layer for performance
+- [ ] Microservices architecture (OCR, Email, Auth services)
+- [ ] Elasticsearch for advanced search
+
+### Phase 3: Advanced Features (Q3 2026)
+- [ ] Document verification via blockchain
+- [ ] Biometric verification integration
+- [ ] SSO support (SAML, OAuth2)
+- [ ] Custom workflow builder for admins
+
+### Phase 4: Enterprise (Q4 2026)
+- [ ] White-label SaaS offering
+- [ ] API marketplace for third-party integrations
+- [ ] Advanced analytics dashboard
+- [ ] Compliance certifications (SOC 2, ISO 27001)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📧 Support
+
+For support, email support@collegeemail.example.com or open an issue on GitHub.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Tesseract.js** for OCR capabilities
+- **NestJS** for the robust backend framework
+- **Prisma** for elegant database management
+- **React** team for the modern frontend library
+
+---
+
+<div align="center">
+
+**Built with ❤️ for educational institutions worldwide**
+
+[Documentation](#) • [Demo](#) • [Report Bug](https://github.com/ashutoshpandey18/college-email-saas/issues) • [Request Feature](https://github.com/ashutoshpandey18/college-email-saas/issues)
+
+</div>
+
 
 ### **2. Verify Email**
 

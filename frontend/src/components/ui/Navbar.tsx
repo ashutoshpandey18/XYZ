@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import Button from "./Button";
 import { getUserRole } from "../../lib/auth";
 
@@ -9,10 +10,12 @@ interface NavbarProps {
 
 const Navbar = ({ userName }: NavbarProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const userRole = getUserRole();
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+    queryClient.clear(); // Clear all cached queries
     navigate("/login");
   };
 
