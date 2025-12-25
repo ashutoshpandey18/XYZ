@@ -35,12 +35,15 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
+# dotenv environment variable files - CRITICAL: Never commit these!
 .env
+.env.development
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 .env.local
+!.env.production.example
 
 # User uploaded files (may contain sensitive data)
 /uploads/*
