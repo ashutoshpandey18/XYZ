@@ -3,11 +3,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install all dependencies (including devDependencies for build)
 RUN npm ci
 
 # Generate Prisma client
@@ -29,7 +32,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -37,13 +40,11 @@ RUN npx prisma generate
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy static files if any
-COPY --from=builder /app/uploads ./uploads 2>/dev/null || true
+# Copy eng.traineddata for OCR (if exists)
+COPY --from=builder /app/eng.traineddata ./eng.traineddata 2>/dev/null || true
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
-USER nestjs
+# Create uploads directory
+RUN mkdir -p uploads/profile-photos
 
 # Expose port
 EXPOSE 3000
