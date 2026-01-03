@@ -156,4 +156,23 @@ export class AuthService {
 
     return true;
   }
+
+  // TEMPORARY: Fix admin role - remove after first use
+  async fixAdminRole(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { email },
+      data: { role: 'ADMIN' },
+    });
+
+    return {
+      message: 'User role updated to ADMIN',
+      email: updated.email,
+      role: updated.role,
+    };
+  }
 }

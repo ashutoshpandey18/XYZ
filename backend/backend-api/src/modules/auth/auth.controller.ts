@@ -19,6 +19,16 @@ export class AuthController {
     return this.authService.login(dto.email, dto.password);
   }
 
+  // TEMPORARY: Fix admin role - remove after first use
+  @Post('fix-admin')
+  @HttpCode(HttpStatus.OK)
+  async fixAdmin(@Body() body: { secret: string; email: string }) {
+    if (body.secret !== 'xyz-admin-fix-2026') {
+      throw new BadRequestException('Invalid secret');
+    }
+    return this.authService.fixAdminRole(body.email);
+  }
+
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body() dto: VerifyEmailDto) {
