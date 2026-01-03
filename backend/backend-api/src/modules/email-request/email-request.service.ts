@@ -12,7 +12,7 @@ export class EmailRequestService {
   ) {}
 
   async createRequest(studentId: string, file: Express.Multer.File) {
-    console.log('\n🚀 ===== NEW EMAIL REQUEST =====');
+    console.log('\n ===== NEW EMAIL REQUEST =====');
     console.log('📋 Student ID:', studentId);
     console.log('📄 File:', file.originalname, `(${file.size} bytes)`);
 
