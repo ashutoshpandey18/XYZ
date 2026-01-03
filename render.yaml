@@ -1,0 +1,36 @@
+services:
+  # Backend API Service
+  - type: web
+    name: college-email-saas-backend
+    runtime: docker
+    dockerfilePath: ./backend/backend-api/Dockerfile
+    dockerContext: ./backend/backend-api
+    region: oregon
+    plan: free
+    branch: main
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: college-email-saas-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://xyz-4lq7.vercel.app
+    autoDeploy: true
+
+databases:
+  # PostgreSQL Database
+  - name: college-email-saas-db
+    databaseName: college_email_saas
+    user: college_admin
+    region: oregon
+    plan: free
+    postgresMajorVersion: 15
