@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { EmailRequest, IssuedEmailHistory, DashboardStats, AuditLog, User } from '../types';
 import { getToken } from './auth';
+import { API_BASE_URL } from '../config';
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -10,21 +11,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Production API URL - Railway backend
-const getBaseUrl = () => {
-  // Check for environment variable first
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  // In production (Vercel), use Railway backend
-  if (import.meta.env.PROD) {
-    return 'https://xyz-production-b23d.up.railway.app';
-  }
-  // Local development
-  return 'http://localhost:3000';
-};
-
-const BASE_URL = getBaseUrl();
+const BASE_URL = API_BASE_URL;
 
 export const api = axios.create({
   baseURL: BASE_URL,

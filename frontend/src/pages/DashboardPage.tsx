@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMe, getStudentRequests, uploadIdCard } from '../lib/api';
+import { getAssetUrl } from '../config';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
@@ -263,7 +264,7 @@ function DashboardPage() {
                     <div className="mt-6">
                       <h3 className="text-sm font-semibold text-gray-700 mb-3">Uploaded ID Card</h3>
                       <img
-                        src={`http://localhost:3000${latestRequest.documentURL}`}
+                        src={getAssetUrl(latestRequest.documentURL)}
                         alt="ID Card"
                         className="max-w-full h-auto rounded border border-gray-200"
                       />

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadProfilePhoto, deleteProfilePhoto } from '../lib/api';
+import { getAssetUrl } from '../config';
 import toast from 'react-hot-toast';
 import Button from './ui/Button';
 
@@ -95,7 +96,7 @@ export default function ProfilePhotoUploader({ profilePhotoUrl, userName }: Prof
     };
   }, [previewUrl]);
 
-  const displayUrl = previewUrl || (profilePhotoUrl ? `http://localhost:3000${profilePhotoUrl}` : null);
+  const displayUrl = previewUrl || (profilePhotoUrl ? getAssetUrl(profilePhotoUrl) : null);
 
   return (
     <div className="flex items-center space-x-4">

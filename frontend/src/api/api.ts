@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { getToken, clearToken } from '../lib/auth';
+import { API_BASE_URL } from '../config';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = API_BASE_URL;
 
 // TypeScript Interfaces
 export interface Student {
