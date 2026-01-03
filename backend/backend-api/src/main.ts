@@ -8,15 +8,21 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // CORS before helmet
+  // CORS - Allow all Vercel and local origins
   app.enableCors({
     origin: [
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
+      'http://localhost:3000',
+      'https://xyz-4lq7.vercel.app',
+      /\.vercel\.app$/,
       process.env.CORS_ORIGIN,
-    ].filter((origin): origin is string => Boolean(origin)),
+      process.env.FRONTEND_URL,
+    ].filter((origin): origin is string | RegExp => Boolean(origin)),
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Security with relaxed policy for development

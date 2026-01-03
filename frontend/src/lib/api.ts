@@ -10,7 +10,21 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Production API URL - Railway backend
+const getBaseUrl = () => {
+  // Check for environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In production (Vercel), use Railway backend
+  if (import.meta.env.PROD) {
+    return 'https://xyz-production-b23d.up.railway.app';
+  }
+  // Local development
+  return 'http://localhost:3000';
+};
+
+const BASE_URL = getBaseUrl();
 
 export const api = axios.create({
   baseURL: BASE_URL,
