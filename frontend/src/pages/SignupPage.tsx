@@ -23,7 +23,7 @@ function SignupPage() {
       console.log("Submitting registration:", data);
       const res = await api.post("/auth/register", data);
       console.log("Registration successful:", res.data);
-      localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("auth_token", res.data.accessToken);
 
       // Redirect based on role
       const role = getUserRole();

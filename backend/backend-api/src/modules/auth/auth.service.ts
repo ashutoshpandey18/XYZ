@@ -27,7 +27,7 @@ export class AuthService {
         data: { name, email, passwordHash: hashed },
       });
 
-      return this.createTokens(user.id, user.role);
+      return this.createTokens(user.id, user.role, user.email);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -49,11 +49,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.createTokens(user.id, user.role);
+    return this.createTokens(user.id, user.role, user.email);
   }
 
-  createTokens(userId: string, role: string) {
-    const payload = { sub: userId, role };
+  createTokens(userId: string, role: string, email?: string) {
+    const payload = { sub: userId, userId, role, email };
     const accessToken = this.jwt.sign(payload, { expiresIn: '1h' });
     const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 

@@ -1,8 +1,9 @@
 import { jwtDecode } from 'jwt-decode';
 
 export interface JwtPayload {
-  userId: string;
-  email: string;
+  sub?: string;
+  userId?: string;
+  email?: string;
   role: 'STUDENT' | 'ADMIN';
   iat: number;
   exp: number;
@@ -20,6 +21,8 @@ export const getToken = (): string | null => {
 
 export const clearToken = (): void => {
   localStorage.removeItem(TOKEN_KEY);
+  // Also clear legacy key
+  localStorage.removeItem('accessToken');
 };
 
 export const decodeToken = <T = JwtPayload>(token?: string): T | null => {
@@ -48,7 +51,8 @@ export const getUserRole = (): 'STUDENT' | 'ADMIN' | null => {
 
 export const getUserId = (): string | null => {
   const decoded = decodeToken();
-  return decoded?.userId || null;
+  // Support both userId and sub (for backward compatibility)
+  return decoded?.userId || decoded?.sub || null;
 };
 
 /**
