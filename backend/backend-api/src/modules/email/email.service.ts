@@ -3,7 +3,6 @@ import { PrismaService } from '../../prisma.service';
 import * as nodemailer from 'nodemailer';
 import { Transporter, SentMessageInfo } from 'nodemailer';
 import * as crypto from 'crypto';
-import { Resend } from 'resend';
 
 export interface EmailDeliveryResult {
   messageId: string;
@@ -18,23 +17,9 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-32-character-secret-key!!';
   private readonly ENCRYPTION_ALGORITHM = 'aes-256-cbc';
-  private resend: Resend | null = null;
 
   constructor(private readonly prisma: PrismaService) {
-    // Initialize Resend if API key is available
-    if (process.env.RESEND_API_KEY) {
-      this.resend = new Resend(process.env.RESEND_API_KEY);
-      this.logger.log('✅ Resend API initialized');
-    } else {
-      this.logger.log('📧 Using SMTP for email delivery (no RESEND_API_KEY found)');
-    }
-  }
-
-  /**
-   * Check if Resend is available
-   */
-  private useResend(): boolean {
-    return this.resend !== null;
+    this.logger.log('📧 Using SMTP for email delivery (EmailJS used on frontend)');
   }
 
   /**
@@ -134,84 +119,6 @@ export class EmailService {
   }
 
   /**
-   * Send email using Resend API
-   */
-  private async sendWithResend(
-    to: string,
-    subject: string,
-    html: string,
-  ): Promise<EmailDeliveryResult> {
-    if (!this.resend) {
-      throw new InternalServerErrorException('Resend not configured');
-    }
-
-    const settings = await this.getEmailSettings();
-
-    // Check if we have a verified domain configured
-    const verifiedDomain = process.env.RESEND_DOMAIN; // e.g., 'yourdomain.com'
-    const resendFromEmail = process.env.RESEND_FROM_EMAIL; // e.g., 'noreply@yourdomain.com'
-
-    let fromEmail: string;
-
-    if (verifiedDomain && resendFromEmail) {
-      // Use verified domain
-      fromEmail = `${settings.fromName} <${resendFromEmail}>`;
-      this.logger.log(`📧 Using verified domain: ${verifiedDomain}`);
-    } else {
-      // Free tier - can only send to your own email (ashutoshpandey23june2005@gmail.com)
-      fromEmail = `${settings.fromName} <onboarding@resend.dev>`;
-      this.logger.warn(`⚠️ Resend free tier: Can only send to verified email. Target: ${to}`);
-
-      // Check if we're trying to send to a non-verified email
-      const ownerEmail = process.env.RESEND_OWNER_EMAIL || 'ashutoshpandey23june2005@gmail.com';
-      if (to.toLowerCase() !== ownerEmail.toLowerCase()) {
-        this.logger.warn(`⚠️ Resend free tier limitation - falling back to SMTP for ${to}`);
-        // Fall back to SMTP for non-owner emails
-        return this.sendWithSMTP(to, subject, html);
-      }
-    }
-
-    this.logger.log(`📧 Sending via Resend to ${to}`);
-
-    try {
-      const { data, error } = await this.resend.emails.send({
-        from: fromEmail,
-        to: [to],
-        subject,
-        html,
-      });
-
-      if (error) {
-        this.logger.error(`❌ Resend error: ${error.message}`);
-        // If Resend fails due to domain issues, try SMTP fallback
-        if (error.message.includes('verify a domain') || error.message.includes('testing emails')) {
-          this.logger.log('🔄 Falling back to SMTP due to Resend domain limitation');
-          return this.sendWithSMTP(to, subject, html);
-        }
-        throw new InternalServerErrorException(`Email failed: ${error.message}`);
-      }
-
-      this.logger.log(`✅ Email sent via Resend: ${data?.id}`);
-
-      return {
-        messageId: data?.id || '',
-        accepted: [to],
-        rejected: [],
-        response: 'Sent via Resend',
-        success: true,
-      };
-    } catch (error) {
-      this.logger.error(`❌ Resend send failed: ${error.message}`);
-      // Try SMTP fallback for any Resend failure
-      if (error.message.includes('verify a domain') || error.message.includes('testing emails')) {
-        this.logger.log('🔄 Falling back to SMTP');
-        return this.sendWithSMTP(to, subject, html);
-      }
-      throw new InternalServerErrorException(`Email delivery failed: ${error.message}`);
-    }
-  }
-
-  /**
    * Send email using SMTP
    */
   private async sendWithSMTP(
@@ -243,16 +150,13 @@ export class EmailService {
   }
 
   /**
-   * Send email - automatically selects Resend or SMTP
+   * Send email using SMTP only
    */
   private async sendEmail(
     to: string,
     subject: string,
     html: string,
   ): Promise<EmailDeliveryResult> {
-    if (this.useResend()) {
-      return this.sendWithResend(to, subject, html);
-    }
     return this.sendWithSMTP(to, subject, html);
   }
 

@@ -53,7 +53,7 @@ async function bootstrap() {
     console.log(`📍 Port: ${port}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ CORS: Enabled for all origins`);
-    console.log(`📧 Email: ${process.env.RESEND_API_KEY ? 'Resend API' : 'SMTP'}`);
+    console.log(`📧 Email: SMTP (Frontend uses EmailJS)`);
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);
