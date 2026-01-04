@@ -150,9 +150,9 @@ export class EmailService {
     // Check if we have a verified domain configured
     const verifiedDomain = process.env.RESEND_DOMAIN; // e.g., 'yourdomain.com'
     const resendFromEmail = process.env.RESEND_FROM_EMAIL; // e.g., 'noreply@yourdomain.com'
-    
+
     let fromEmail: string;
-    
+
     if (verifiedDomain && resendFromEmail) {
       // Use verified domain
       fromEmail = `${settings.fromName} <${resendFromEmail}>`;
@@ -161,7 +161,7 @@ export class EmailService {
       // Free tier - can only send to your own email (ashutoshpandey23june2005@gmail.com)
       fromEmail = `${settings.fromName} <onboarding@resend.dev>`;
       this.logger.warn(`⚠️ Resend free tier: Can only send to verified email. Target: ${to}`);
-      
+
       // Check if we're trying to send to a non-verified email
       const ownerEmail = process.env.RESEND_OWNER_EMAIL || 'ashutoshpandey23june2005@gmail.com';
       if (to.toLowerCase() !== ownerEmail.toLowerCase()) {

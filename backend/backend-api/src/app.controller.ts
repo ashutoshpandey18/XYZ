@@ -8,6 +8,7 @@ export class AppController {
       status: 'ok',
       message: 'College Email SaaS API is running',
       timestamp: new Date().toISOString(),
+      version: '2.0-nuclear-cors',
       endpoints: {
         register: 'POST /auth/register',
         login: 'POST /auth/login',
@@ -23,4 +24,14 @@ export class AppController {
       uptime: process.uptime(),
     };
   }
+
+  @Get('cors-test')
+  corsTest() {
+    return {
+      message: 'If you can see this, CORS is working!',
+      origin: 'allowed',
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
+
