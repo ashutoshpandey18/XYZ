@@ -147,8 +147,29 @@ export class EmailService {
 
     const settings = await this.getEmailSettings();
 
-    // Resend requires verified domain or uses onboarding@resend.dev for testing
-    const fromEmail = `${settings.fromName} <onboarding@resend.dev>`;
+    // Check if we have a verified domain configured
+    const verifiedDomain = process.env.RESEND_DOMAIN; // e.g., 'yourdomain.com'
+    const resendFromEmail = process.env.RESEND_FROM_EMAIL; // e.g., 'noreply@yourdomain.com'
+    
+    let fromEmail: string;
+    
+    if (verifiedDomain && resendFromEmail) {
+      // Use verified domain
+      fromEmail = `${settings.fromName} <${resendFromEmail}>`;
+      this.logger.log(`📧 Using verified domain: ${verifiedDomain}`);
+    } else {
+      // Free tier - can only send to your own email (ashutoshpandey23june2005@gmail.com)
+      fromEmail = `${settings.fromName} <onboarding@resend.dev>`;
+      this.logger.warn(`⚠️ Resend free tier: Can only send to verified email. Target: ${to}`);
+      
+      // Check if we're trying to send to a non-verified email
+      const ownerEmail = process.env.RESEND_OWNER_EMAIL || 'ashutoshpandey23june2005@gmail.com';
+      if (to.toLowerCase() !== ownerEmail.toLowerCase()) {
+        this.logger.warn(`⚠️ Resend free tier limitation - falling back to SMTP for ${to}`);
+        // Fall back to SMTP for non-owner emails
+        return this.sendWithSMTP(to, subject, html);
+      }
+    }
 
     this.logger.log(`📧 Sending via Resend to ${to}`);
 
@@ -162,6 +183,11 @@ export class EmailService {
 
       if (error) {
         this.logger.error(`❌ Resend error: ${error.message}`);
+        // If Resend fails due to domain issues, try SMTP fallback
+        if (error.message.includes('verify a domain') || error.message.includes('testing emails')) {
+          this.logger.log('🔄 Falling back to SMTP due to Resend domain limitation');
+          return this.sendWithSMTP(to, subject, html);
+        }
         throw new InternalServerErrorException(`Email failed: ${error.message}`);
       }
 
@@ -176,6 +202,11 @@ export class EmailService {
       };
     } catch (error) {
       this.logger.error(`❌ Resend send failed: ${error.message}`);
+      // Try SMTP fallback for any Resend failure
+      if (error.message.includes('verify a domain') || error.message.includes('testing emails')) {
+        this.logger.log('🔄 Falling back to SMTP');
+        return this.sendWithSMTP(to, subject, html);
+      }
       throw new InternalServerErrorException(`Email delivery failed: ${error.message}`);
     }
   }
