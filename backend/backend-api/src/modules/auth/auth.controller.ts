@@ -8,15 +8,47 @@ import { RequestPasswordResetDto, ResetPasswordDto, VerifyEmailDto } from './dto
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Get('test')
+  testAuth() {
+    console.log('✅ Auth module test endpoint hit');
+    return {
+      status: 'ok',
+      message: 'Auth module is working',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    };
+  }
+
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto.name, dto.email, dto.password);
+  async register(@Body() dto: RegisterDto) {
+    console.log('📝 REGISTER REQUEST:', { email: dto.email, name: dto.name });
+    try {
+      const result = await this.authService.register(dto.name, dto.email, dto.password);
+      console.log('✅ Registration successful');
+      return result;
+    } catch (error) {
+      console.error('❌ Registration failed:', error.message);
+      throw error;
+    }
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password);
+  async login(@Body() dto: LoginDto) {
+    console.log('🔐 LOGIN REQUEST:', {
+      email: dto.email,
+      hasPassword: !!dto.password,
+      passwordLength: dto.password?.length || 0,
+    });
+
+    try {
+      const result = await this.authService.login(dto.email, dto.password);
+      console.log('✅ Login successful, returning tokens');
+      return result;
+    } catch (error) {
+      console.error('❌ Login failed:', error.message);
+      throw error;
+    }
   }
 
   @Post('verify-email')

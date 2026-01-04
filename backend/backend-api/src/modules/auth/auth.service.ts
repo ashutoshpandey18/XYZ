@@ -39,16 +39,41 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    console.log('🔐 LOGIN ATTEMPT:');
+    console.log(`   📧 Email: ${email}`);
+    console.log(`   🔑 Password length: ${password?.length || 0} chars`);
+    console.log(`   📅 Timestamp: ${new Date().toISOString()}`);
+
+    // Check if user exists
     const user = await this.prisma.user.findUnique({ where: { email } });
+
     if (!user) {
+      console.log(`   ❌ USER NOT FOUND: ${email}`);
+      console.log(`   💡 Available users in DB: Run 'select email from "User";' to check`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log(`   ✅ USER FOUND:`, {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      hasPasswordHash: !!user.passwordHash,
+      passwordHashLength: user.passwordHash?.length || 0,
+    });
+
+    // Compare password
+    console.log(`   🔄 Comparing passwords...`);
     const isMatch = await bcrypt.compare(password, user.passwordHash);
+    console.log(`   🔍 Password match result: ${isMatch}`);
+
     if (!isMatch) {
+      console.log(`   ❌ PASSWORD MISMATCH`);
+      console.log(`   📝 Provided password: ${password.substring(0, 3)}...`);
+      console.log(`   📝 Hash in DB starts: ${user.passwordHash?.substring(0, 10)}...`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log(`   ✅ LOGIN SUCCESSFUL for ${email}`);
     return this.createTokens(user.id, user.role, user.email);
   }
 
