@@ -8,7 +8,7 @@ async function updateAdminPassword() {
     console.log('🔐 Updating admin password in database...\n');
 
     const newPassword = 'ashutoshremotesweeng';
-    
+
     // Generate new hash
     console.log(`   🔄 Hashing new password: "${newPassword}"`);
     const newHash = await bcrypt.hash(newPassword, 10);
@@ -30,7 +30,7 @@ async function updateAdminPassword() {
 
   } catch (error) {
     console.error('❌ Error:', error.message);
-    
+
     if (error.code === 'P2025') {
       console.error('\n⚠️  Admin user not found. Create it first with check-users.js');
     } else if (error.code === 'P1001') {
