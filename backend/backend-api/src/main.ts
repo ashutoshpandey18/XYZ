@@ -4,66 +4,67 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import helmet from 'helmet';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Allowed origins for CORS
+  // ============================================
+  // CORS FIX - RAW EXPRESS MIDDLEWARE (BULLETPROOF)
+  // This runs BEFORE everything else
+  // ============================================
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
     'http://localhost:3000',
     'https://xyz-4lq7.vercel.app',
-  ];
+    process.env.CORS_ORIGIN,
+    process.env.FRONTEND_URL,
+  ].filter(Boolean) as string[];
 
-  // Add env-based origins if they exist
-  if (process.env.CORS_ORIGIN) allowedOrigins.push(process.env.CORS_ORIGIN);
-  if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
+  // Raw CORS middleware - handles ALL requests including preflight
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin as string;
+    
+    // Check if origin is allowed
+    const isAllowed = !origin || 
+      allowedOrigins.includes(origin) || 
+      origin.endsWith('.vercel.app') ||
+      origin.includes('localhost');
 
-  // CORS Configuration - MUST be before helmet
+    if (isAllowed && origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
+    res.setHeader('Access-Control-Max-Age', '86400');
+
+    // Handle preflight OPTIONS request
+    if (req.method === 'OPTIONS') {
+      res.status(204).end();
+      return;
+    }
+
+    next();
+  });
+
+  // Also enable NestJS CORS as backup
   app.enableCors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, curl, etc.)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      // Check if origin is in allowed list or matches vercel.app pattern
-      const isAllowed =
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
-        origin.includes('localhost');
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.log(`CORS blocked origin: ${origin}`);
-        callback(null, false);
-      }
-    },
+    origin: true, // Reflect the request origin
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'Origin',
-      'X-Requested-With',
-      'Access-Control-Request-Method',
-      'Access-Control-Request-Headers',
-    ],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-    maxAge: 86400, // Cache preflight for 24 hours
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
   });
 
   // Security middleware - AFTER CORS
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+      crossOriginOpenerPolicy: false, // Disable to prevent CORS issues
       contentSecurityPolicy: false,
     }),
   );
