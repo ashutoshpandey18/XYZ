@@ -4,8 +4,18 @@ import emailjs from 'emailjs-com';
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+// Debug: Log configuration (remove in production)
+console.log('🔍 EmailJS Configuration:');
+console.log('  Service ID:', EMAILJS_SERVICE_ID || '❌ MISSING');
+console.log('  Public Key:', EMAILJS_PUBLIC_KEY ? '✅ Set' : '❌ MISSING');
+
 // Initialize EmailJS with your public key
-emailjs.init(EMAILJS_PUBLIC_KEY);
+if (EMAILJS_PUBLIC_KEY) {
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+  console.log('✅ EmailJS initialized');
+} else {
+  console.error('❌ EmailJS Public Key missing! Set VITE_EMAILJS_PUBLIC_KEY in Vercel environment variables');
+}
 
 interface EmailParams {
   to_email: string;
@@ -26,7 +36,25 @@ export const sendEmail = async (
   templateId: string,
   params: EmailParams
 ): Promise<{ success: boolean; message: string }> => {
+  console.log('📧 Attempting to send email via EmailJS...');
+  console.log('  Template ID:', templateId || '❌ MISSING');
+  console.log('  Service ID:', EMAILJS_SERVICE_ID || '❌ MISSING');
+  console.log('  To Email:', params.to_email);
+  
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_PUBLIC_KEY || !templateId) {
+    const error = 'EmailJS not configured. Missing: ' + 
+      (!EMAILJS_SERVICE_ID ? 'SERVICE_ID ' : '') +
+      (!EMAILJS_PUBLIC_KEY ? 'PUBLIC_KEY ' : '') +
+      (!templateId ? 'TEMPLATE_ID' : '');
+    console.error('❌', error);
+    return {
+      success: false,
+      message: error,
+    };
+  }
+
   try {
+    console.log('📤 Sending email...');
     const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
       templateId,
@@ -34,19 +62,21 @@ export const sendEmail = async (
       EMAILJS_PUBLIC_KEY
     );
 
+    console.log('✅ EmailJS Response:', response);
     if (response.status === 200) {
       return {
         success: true,
         message: 'Email sent successfully!',
       };
     } else {
+      console.warn('⚠️ Unexpected status:', response.status);
       return {
         success: false,
         message: 'Failed to send email. Please try again.',
       };
     }
   } catch (error: any) {
-    console.error('EmailJS Error:', error);
+    console.error('❌ EmailJS Error:', error);
     return {
       success: false,
       message: error?.text || 'An error occurred while sending the email.',
