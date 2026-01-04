@@ -305,7 +305,7 @@ export class EmailService {
     this.logger.log(`🧪 Sending test email to ${recipientEmail}`);
 
     const settings = await this.getEmailSettings();
-    const provider = this.useResend() ? 'Resend API' : 'SMTP';
+    const provider = 'SMTP'; // Using EmailJS on frontend for production emails
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

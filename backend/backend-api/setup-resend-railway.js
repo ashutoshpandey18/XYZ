@@ -13,8 +13,8 @@ async function setupResend() {
 
     // Update to use Resend API
     await client.query(`
-      UPDATE "EmailSettings" 
-      SET 
+      UPDATE "EmailSettings"
+      SET
         "smtpHost" = 'resend',
         "smtpPort" = 0,
         "smtpUser" = '',

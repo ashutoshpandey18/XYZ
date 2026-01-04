@@ -74,7 +74,7 @@ async function sendBulkEmails() {
     try {
       await sendEmail(RECIPIENT_EMAILS[i], i + 1);
       successCount++;
-      
+
       // Wait 1.5 seconds between emails to avoid rate limiting
       if (i < RECIPIENT_EMAILS.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1500));

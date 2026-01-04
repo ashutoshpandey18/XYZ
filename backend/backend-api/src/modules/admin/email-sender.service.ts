@@ -1,11 +1,11 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+// import { Resend } from 'resend'; // Removed - using EmailJS on frontend
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailSenderService {
-  private resend?: Resend;
+  private resend?: any; // Resend removed - using EmailJS on frontend
   private nodemailerTransporter?: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
@@ -30,9 +30,9 @@ export class EmailSenderService {
     console.log('📋 Email-related env keys available:', envKeys);
 
     if (resendApiKey) {
-      // Use Resend ONLY when API key is provided
-      this.resend = new Resend(resendApiKey);
-      console.log('✅ Email service initialized with Resend');
+      // Resend disabled - using EmailJS on frontend
+      // this.resend = new Resend(resendApiKey);
+      console.log('ℹ️ Resend API key found but Resend library not used (using EmailJS on frontend)');
     } else if (smtpHost && smtpUser && this.configService.get<string>('SMTP_PASS')) {
       // Fallback to SMTP only if credentials are provided
       this.nodemailerTransporter = nodemailer.createTransport({
