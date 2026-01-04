@@ -437,19 +437,10 @@ export class AdminService {
     this.logger.log(`🔐 Temp password: ${tempPassword}`);
 
     try {
-      // Send email via Nodemailer
-      this.logger.log(`📤 Sending email notification to ${student.email}...`);
-
-      const deliveryResult = await this.emailService.sendCollegeEmailIssued(
-        student.email,
-        student.name,
-        collegeEmail,
-        tempPassword,
-      );
-
-      this.logger.log(`✅ Email delivered successfully!`);
-      this.logger.log(`📨 Message ID: ${deliveryResult.messageId}`);
-      this.logger.log(`✅ Accepted: ${deliveryResult.accepted.join(', ')}`);
+      // Skip SMTP email sending - EmailJS handles email from frontend
+      // Email will be sent by frontend via EmailJS with the returned credentials
+      this.logger.log(`📤 Email will be sent by frontend via EmailJS to ${student.email}...`);
+      this.logger.log(`✅ Credentials generated, ready for frontend to send via EmailJS`);
 
       // Update student with college email credentials
       await this.prisma.user.update({
