@@ -499,7 +499,7 @@ export class AdminService {
         adminId,
         requestId,
         AuditAction.ISSUE_EMAIL,
-        `College email ${collegeEmail} issued and delivered. Message ID: ${deliveryResult.messageId}`,
+        `College email ${collegeEmail} issued. Email will be sent via EmailJS from frontend.`,
       );
 
       this.logger.log(`✅ College email issuance complete`);
@@ -511,11 +511,11 @@ export class AdminService {
         collegeEmail,
         tempPassword, // Return for admin to show student
         deliveryInfo: {
-          messageId: deliveryResult.messageId,
-          accepted: deliveryResult.accepted,
+          messageId: 'emailjs-frontend',
+          accepted: [student.email],
           sentAt: new Date(),
         },
-        message: 'College email issued and delivered successfully',
+        message: 'College email issued successfully. Email will be sent via EmailJS.',
       };
 
     } catch (error) {
