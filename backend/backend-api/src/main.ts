@@ -14,12 +14,12 @@ async function bootstrap() {
         : ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
-    // Ultra-permissive CORS for Railway deployment
+    // Ultra-permissive CORS for Railway deployment (allow all Vercel previews)
     app.enableCors({
-      origin: true, // Reflects the request origin
+      origin: '*', // Allow all origins including Vercel previews
       credentials: true,
       methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+      allowedHeaders: '*',
       exposedHeaders: ['Content-Range', 'X-Content-Range'],
       preflightContinue: false,
       optionsSuccessStatus: 204,
