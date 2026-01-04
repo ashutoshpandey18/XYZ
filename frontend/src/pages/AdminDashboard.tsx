@@ -9,6 +9,7 @@ import Card from '../components/ui/Card';
 import StatusBadge from '../components/ui/StatusBadge';
 import ConfidenceBadge from '../components/ui/ConfidenceBadge';
 import Button from '../components/ui/Button';
+import { sendNotificationEmail } from '../utils/emailjs';
 
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
@@ -61,11 +62,37 @@ export default function AdminDashboard() {
   });
 
   const issueMutation = useMutation({
-    mutationFn: ({ id, notes }: { id: number; notes?: string }) => issueEmail(id, notes),
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      // Call backend to issue email (generates credentials)
+      const data = await issueEmail(id, notes);
+
+      // Send email notification via EmailJS
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const studentEmail = selectedRequest?.user?.email;
+      const studentName = selectedRequest?.user?.name || selectedRequest?.extractedName;
+
+      if (studentEmail && studentName) {
+        const emailResult = await sendNotificationEmail(
+          templateId,
+          studentEmail,
+          studentName,
+          'Your College Email Has Been Issued',
+          `Congratulations! Your college email has been issued.\n\nCollege Email: ${data.collegeEmail}\nTemporary Password: ${data.tempPassword}\n\nPlease login and change your password immediately.\n\nBest regards,\nCollege Email Team`
+        );
+
+        if (!emailResult.success) {
+          console.warn('Email notification failed:', emailResult.message);
+          toast.error('College email issued but notification email failed to send');
+        }
+      }
+
+      return data;
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       toast.success(`College email issued: ${data.collegeEmail}`);
+      toast.success(`Email notification sent to student`, { duration: 5000 });
       toast.success(`Temporary password: ${data.tempPassword}`, { duration: 10000 });
       setSelectedRequest(null);
       setNotes('');

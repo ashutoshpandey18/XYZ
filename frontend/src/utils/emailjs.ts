@@ -13,6 +13,7 @@ interface EmailParams {
   from_name: string;
   subject: string;
   message: string;
+  [key: string]: any; // Index signature for EmailJS compatibility
 }
 
 /**
