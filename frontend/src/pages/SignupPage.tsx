@@ -20,9 +20,7 @@ function SignupPage() {
     setErrorMessage("");
 
     try {
-      console.log("Submitting registration:", data);
       const res = await api.post("/auth/register", data);
-      console.log("Registration successful:", res.data);
       localStorage.setItem("auth_token", res.data.accessToken);
 
       // Redirect based on role
@@ -33,8 +31,6 @@ function SignupPage() {
         navigate("/dashboard");
       }
     } catch (err: any) {
-      console.error("Registration error:", err);
-      console.error("Error response:", err.response);
       const message =
         err.response?.data?.message ||
         (Array.isArray(err.response?.data?.message)
