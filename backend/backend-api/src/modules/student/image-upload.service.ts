@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class ImageUploadService {
   private readonly uploadsDir = path.join(process.cwd(), 'uploads', 'profile-photos');
+  private readonly baseUrl = process.env.BASE_URL || 'https://xyz-production-b23d.up.railway.app';
 
   constructor(private prisma: PrismaService) {
     this.ensureUploadsDir();
@@ -60,8 +61,8 @@ export class ImageUploadService {
         }
       }
 
-      // Update database with new photo URL
-      const photoUrl = `/uploads/profile-photos/${filename}`;
+      // Update database with new photo URL (full URL for production)
+      const photoUrl = `${this.baseUrl}/uploads/profile-photos/${filename}`;
       await this.prisma.user.update({
         where: { id: userId },
         data: { profilePhotoUrl: photoUrl },
