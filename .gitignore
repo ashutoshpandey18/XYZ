@@ -38,3 +38,18 @@ backend/backend-api/uploads/
 # Temporary files
 *.tmp
 .cache/
+
+# Test scripts with credentials (DO NOT COMMIT)
+backend/backend-api/setup-brevo.js
+backend/backend-api/test-brevo-email.js
+backend/backend-api/delete-*.js
+backend/backend-api/check-*.js
+backend/backend-api/fix-*.js
+backend/backend-api/full-system-check.js
+backend/backend-api/update-email-settings.js
+test-backend.js
+test-emailjs/
+BREVO-*.md
+EMAILJS-*.md
+PRODUCTION-FIXES-*.md
+RAILWAY-ENV-VARS.md
