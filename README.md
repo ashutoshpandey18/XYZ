@@ -4,6 +4,8 @@
 
 A full-stack SaaS platform that automates institutional email creation through intelligent document verification, admin approval workflows, and secure credential delivery. Built with NestJS, React, PostgreSQL, deployed on Railway + Vercel.
 
+🔗 **Live Demo**: [https://xyz-4lq7.vercel.app/login](https://xyz-4lq7.vercel.app/login)
+
 ---
 
 ## ✨ Key Features
