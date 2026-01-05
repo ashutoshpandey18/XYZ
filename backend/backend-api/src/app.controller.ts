@@ -1,7 +1,10 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Delete } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 
 @Controller()
 export class AppController {
+  private prisma = new PrismaClient();
+
   @Get()
   getHealth() {
     return {
@@ -32,6 +35,12 @@ export class AppController {
       origin: 'allowed',
       timestamp: new Date().toISOString(),
     };
+  }
+
+  @Delete('users/delete-all')
+  async deleteAllUsers(): Promise<{ message: string }> {
+    await this.prisma.user.deleteMany();
+    return { message: 'All users have been deleted successfully.' };
   }
 }
 
