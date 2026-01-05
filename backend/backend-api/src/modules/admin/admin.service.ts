@@ -437,10 +437,21 @@ export class AdminService {
     this.logger.log(`🔐 Temp password: ${tempPassword}`);
 
     try {
-      // Skip SMTP email sending - EmailJS handles email from frontend
-      // Email will be sent by frontend via EmailJS with the returned credentials
-      this.logger.log(`📤 Email will be sent by frontend via EmailJS to ${student.email}...`);
-      this.logger.log(`✅ Credentials generated, ready for frontend to send via EmailJS`);
+      // Send email notification via Brevo SMTP
+      this.logger.log(`📤 Sending email notification to ${student.email} via Brevo SMTP...`);
+
+      try {
+        await this.emailService.sendCollegeEmailIssued(
+          student.email,
+          student.name,
+          collegeEmail,
+          tempPassword,
+        );
+        this.logger.log(`✅ Email sent successfully via Brevo SMTP`);
+      } catch (emailError) {
+        this.logger.error(`❌ Email delivery failed: ${emailError.message}`);
+        // Continue with issuance even if email fails
+      }
 
       // Update student with college email credentials
       await this.prisma.user.update({
