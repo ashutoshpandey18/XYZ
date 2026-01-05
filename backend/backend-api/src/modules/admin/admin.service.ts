@@ -5,12 +5,13 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma.service';
 import { EmailGenerationService } from './email-generation.service';
 import { AuditLogService } from './audit-log.service';
-import { EmailService } from '../email/email.service';
+import { EmailBrevoApiService } from '../email/email-brevo-api.service';
 import { EmailRequestStatus, Prisma, AuditAction, EmailDeliveryStatus } from '@prisma/client';
 import { GetRequestsQueryDto } from './dto/admin-requests.dto';
 import {
@@ -33,7 +34,7 @@ export class AdminService {
     private prisma: PrismaService,
     private emailGenerator: EmailGenerationService,
     private auditLogService: AuditLogService,
-    private emailService: EmailService,
+    @Inject('EMAIL_PROVIDER') private emailService: EmailBrevoApiService,
   ) {}
 
   /**

@@ -53,7 +53,7 @@ async function bootstrap() {
     console.log(`📍 Port: ${port}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ CORS: Enabled for all origins`);
-    console.log(`📧 Email: SMTP (Frontend uses EmailJS)`);
+    console.log(`📧 Email: Brevo REST API (Railway-compatible)`);
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);
