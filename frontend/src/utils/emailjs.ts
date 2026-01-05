@@ -40,9 +40,9 @@ export const sendEmail = async (
   console.log('  Template ID:', templateId || '❌ MISSING');
   console.log('  Service ID:', EMAILJS_SERVICE_ID || '❌ MISSING');
   console.log('  To Email:', params.to_email);
-  
+
   if (!EMAILJS_SERVICE_ID || !EMAILJS_PUBLIC_KEY || !templateId) {
-    const error = 'EmailJS not configured. Missing: ' + 
+    const error = 'EmailJS not configured. Missing: ' +
       (!EMAILJS_SERVICE_ID ? 'SERVICE_ID ' : '') +
       (!EMAILJS_PUBLIC_KEY ? 'PUBLIC_KEY ' : '') +
       (!templateId ? 'TEMPLATE_ID' : '');
