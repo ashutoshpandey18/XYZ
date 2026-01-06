@@ -246,22 +246,22 @@ XYZ/
 
 ## 📈 Features Implemented
 
-✅ Student registration & login  
-✅ JWT authentication with refresh tokens  
-✅ Email verification & password reset  
-✅ ID card upload with OCR (Tesseract.js)  
-✅ AI confidence scoring (0-100%)  
-✅ Admin dashboard with request management  
-✅ Approve/Reject requests with notes  
-✅ College email issuance with Brevo API  
-✅ Email retry mechanism (3 attempts)  
-✅ Complete audit logging  
-✅ Real-time status tracking  
-✅ Profile photo upload  
-✅ Email settings management  
-✅ Dashboard statistics  
-✅ Role-based access control  
-✅ Railway & Vercel deployment  
+✅ Student registration & login
+✅ JWT authentication with refresh tokens
+✅ Email verification & password reset
+✅ ID card upload with OCR (Tesseract.js)
+✅ AI confidence scoring (0-100%)
+✅ Admin dashboard with request management
+✅ Approve/Reject requests with notes
+✅ College email issuance with Brevo API
+✅ Email retry mechanism (3 attempts)
+✅ Complete audit logging
+✅ Real-time status tracking
+✅ Profile photo upload
+✅ Email settings management
+✅ Dashboard statistics
+✅ Role-based access control
+✅ Railway & Vercel deployment
 
 ---
 
@@ -288,8 +288,8 @@ npx prisma migrate deploy
 
 ## 👨‍💻 Author
 
-**Ashutosh Pandey**  
-GitHub: [@ashutoshpandey18](https://github.com/ashutoshpandey18)  
+**Ashutosh Pandey**
+GitHub: [@ashutoshpandey18](https://github.com/ashutoshpandey18)
 Repository: [XYZ](https://github.com/ashutoshpandey18/XYZ)
 
 ---
