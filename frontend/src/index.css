@@ -1,1 +1,100 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --animate-border-spin: border-spin 4s linear infinite;
+  --animate-light-sweep: light-sweep 6s ease-in-out infinite;
+  --animate-shimmer-bar: shimmer-bar 2.5s ease-in-out infinite;
+}
+
+:root {
+  --page-bg: #ffffff;
+  --hero-bg: #fefdfb;
+  --section-bg: #faf9f7;
+  --section-alt-bg: #f8f6f3;
+  --card-bg: #ffffff;
+  --card-hover-bg: #fdfcfa;
+  --preview-outer: #f5f3f0;
+  --preview-inner: #ffffff;
+  --preview-title-bg: #faf9f7;
+  --preview-border: rgba(139, 92, 46, 0.08);
+  --preview-shadow: rgba(139, 92, 46, 0.08);
+  --border: rgba(139, 92, 46, 0.08);
+  --border-hover: rgba(139, 92, 46, 0.12);
+  --text-primary: #1f1f1f;
+  --text-secondary: #6b6560;
+  --text-muted: #9b8f87;
+  --badge-bg: rgba(59, 130, 246, 0.06);
+  --badge-border: rgba(59, 130, 246, 0.15);
+  --badge-text: #1e40af;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --gradient-1: rgba(217, 180, 130, 0.15);
+  --gradient-2: rgba(201, 160, 110, 0.08);
+  --grid-opacity: 0.02;
+  --conic-color: rgba(59, 130, 246, 0.4);
+  --sweep-color: rgba(59, 130, 246, 0.12);
+  --stat-color-1: #d97706;
+  --stat-color-2: #059669;
+  --stat-color-3: #2563eb;
+  --pulse-dot: #10b981;
+}
+
+.dark {
+  --page-bg: #030712;
+  --hero-bg: #030712;
+  --section-bg: #050d1a;
+  --section-alt-bg: #030712;
+  --card-bg: rgba(255, 255, 255, 0.02);
+  --card-hover-bg: rgba(255, 255, 255, 0.04);
+  --preview-outer: #0a1628;
+  --preview-inner: #0c1a30;
+  --preview-title-bg: rgba(255, 255, 255, 0.06);
+  --preview-border: rgba(255, 255, 255, 0.04);
+  --preview-shadow: transparent;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(59, 130, 246, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --badge-bg: rgba(59, 130, 246, 0.06);
+  --badge-border: rgba(59, 130, 246, 0.2);
+  --badge-text: #93c5fd;
+  --accent: #2563eb;
+  --accent-hover: #3b82f6;
+  --gradient-1: rgba(30, 64, 175, 0.15);
+  --gradient-2: rgba(30, 58, 138, 0.10);
+  --grid-opacity: 0.03;
+  --conic-color: #1e40af;
+  --sweep-color: rgba(96, 165, 250, 0.2);
+  --stat-color-1: #fbbf24;
+  --stat-color-2: #34d399;
+  --stat-color-3: #60a5fa;
+  --pulse-dot: #10b981;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes border-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes light-sweep {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+@keyframes shimmer-bar {
+  0%, 100% { opacity: 0.3; width: 45%; }
+  50% { opacity: 1; width: 75%; }
+}
